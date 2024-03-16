@@ -5,6 +5,14 @@
 
 TFT_eSPI tft; // Create an instance of the TFT class
 
+char quizAnswers[] = "000";
+
+void clearScreen()
+{
+  tft.fillScreen(TFT_BLACK);
+  tft.setCursor(0, 0);
+}
+
 void displayTrex()
 {
   tft.fillScreen(TFT_BLACK); // Clear the screen
@@ -44,6 +52,8 @@ void displayX()
   delay(1000); // Wait for 3 seconds
 
   tft.fillScreen(TFT_BLACK); // Clear the screen
+  tft.setTextSize(3);
+  tft.setTextColor(TFT_WHITE);
 }
 
 void displayCircle()
@@ -86,13 +96,24 @@ void animateEyes()
   }
 }
 
+void drawVerticalLine()
+{
+  int displayWidth = tft.width();
+  int displayHeight = tft.height();
+
+  int linePosition = (2 * displayWidth) / 3; // Calculate 2/3 of the display width
+
+  tft.drawLine(linePosition, 0, linePosition, displayHeight, TFT_WHITE); // Draw a white line
+}
+
 void buttonReadText()
 {
-  tft.fillScreen(TFT_BLACK);
-  tft.setTextSize(3);
+  drawVerticalLine();
+  tft.setTextSize(2);
   tft.setTextColor(TFT_WHITE);
   tft.setCursor(0, 0);
-  tft.println("\n      yes--->\n\n\n      no--->");
+  tft.println("\n               yes->\n\n\n\n               no->");
+  tft.setTextSize(3);
 }
 
 void displayErrorMessage(const std::string &message)
@@ -106,4 +127,26 @@ void displayErrorMessage(const std::string &message)
 
   delay(1000); // Wait for 3 seconds
   return;
+}
+
+void drawLineAcrossDisplay()
+{
+  int linePosition = tft.height() / 4;                                 // Calculate the position of the line
+  tft.drawLine(0, linePosition, tft.width(), linePosition, TFT_WHITE); // Draw the line
+}
+
+void writeQuestionsAtTop()
+{
+  tft.setCursor(0, 0);         // Set the cursor to the top left corner
+  tft.setTextColor(TFT_WHITE); // Set the text color to white
+  tft.setTextSize(3);          // Set the text size
+  tft.println("Questions\n");  // Print the text
+
+  // Go down two lines and display "Question 1:"
+  tft.print("\nQuestion 1: ");
+  tft.println(quizAnswers[0]);
+  tft.print("\nQuestion 2: ");
+  tft.println(quizAnswers[1]);
+  tft.print("\nQuestion 3: ");
+  tft.println(quizAnswers[2]);
 }
