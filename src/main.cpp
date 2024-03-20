@@ -129,7 +129,7 @@ void loop()
         writeQuestionsAtTop();
         delay(2000); // Wait for 2 seconds
         lootBox();
-        connectToNetwork();
+        //connectToNetwork();
       }
       else if (word == "creatureCapture")
       {
@@ -196,7 +196,7 @@ void whatAnimal()
       clearScreen();
       tft.println("Return to\ntavern to\nkeep\ncreature");
       delay(1000); // Wait for 2 seconds
-      connectToNetwork();
+      //connectToNetwork();
     }
     else if (buttonConfirm() == 0)
     {
@@ -270,12 +270,13 @@ void getPlayerData()
     clearScreen();
     tft.println("Connected to server!");
     // Make a HTTP request:
-    client.println("GET /api/v1/resources HTTP/1.1");
-    // client.println("Host: gameapi-2e9bb6e38339.herokuapp.com");
+    // client.println("GET /api/v1/resources HTTP/1.1");
+    client.println("GET  https://gameapi-2e9bb6e38339.herokuapp.com/api/v1/resources HTTP/1.1");
 
     client.println("Host: gameapi-2e9bb6e38339.herokuapp.com");
     client.println("Connection: close");
     client.println();
+    delay(1000); // Wait for 1 second
   }
 
   while (client.connected())
@@ -285,6 +286,7 @@ void getPlayerData()
     {
       Serial.println("headers received");
       tft.println("headers received");
+      delay(1000); // Wait for 1 second
 
       break;
     }
