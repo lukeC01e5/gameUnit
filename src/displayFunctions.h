@@ -1,7 +1,8 @@
 
 #include <TFT_eSPI.h> // Include the TFT_eSPI library
 
-#include "Trex.h" // Include the T-Rex image
+#include "Trex.h"     // Include the T-Rex image
+#include "treasure.h" // Include the treasure image
 
 TFT_eSPI tft; // Create an instance of the TFT class
 
@@ -11,6 +12,22 @@ void clearScreen()
 {
   tft.fillScreen(TFT_BLACK);
   tft.setCursor(0, 0);
+}
+
+void lootBox()
+{
+  tft.fillScreen(TFT_BLACK); // Clear the screen
+  tft.setTextSize(3);
+  tft.setTextColor(TFT_WHITE);
+  tft.setCursor(0, 0);
+  tft.println("Return To\nTavern to\nopen loot\nbox");
+  delay(3000);
+  tft.fillScreen(TFT_BLACK); // Clear the screen
+  tft.setSwapBytes(true);    // Swap the byte order for the display (if colors are wrong, change this value to false)
+  tft.setCursor(0, 0);
+  tft.pushImage(50, 0, 145, 128, treasure); // Draw the T-Rex image at the center of the screen
+  delay(3000);
+  return;
 }
 
 void displayTrex()
@@ -29,11 +46,16 @@ void displayTrex()
 void scan4challange()
 {
   tft.fillScreen(TFT_BLACK);
+
+  // Draw a 3 pixel wide orange border around the screen
+  tft.drawRect(0, 0, tft.width(), tft.height(), TFT_ORANGE);
+  tft.drawRect(1, 1, tft.width() - 2, tft.height() - 2, TFT_ORANGE);
+  tft.drawRect(2, 2, tft.width() - 4, tft.height() - 4, TFT_ORANGE);
+
   tft.setTextSize(3);
   tft.setTextColor(TFT_WHITE);
-  // tft.setCursor(0, tft.getCursorY() + 10); // Move the cursor down
   tft.setCursor(0, 0);
-  tft.println("\nScan\nchallange\ncard.....");
+  tft.println("\n  Scan\n  challange\n  card.....");
 }
 
 void displayX()
@@ -133,20 +155,4 @@ void drawLineAcrossDisplay()
 {
   int linePosition = tft.height() / 4;                                 // Calculate the position of the line
   tft.drawLine(0, linePosition, tft.width(), linePosition, TFT_WHITE); // Draw the line
-}
-
-void writeQuestionsAtTop()
-{
-  tft.setCursor(0, 0);         // Set the cursor to the top left corner
-  tft.setTextColor(TFT_WHITE); // Set the text color to white
-  tft.setTextSize(3);          // Set the text size
-  tft.println("Questions\n");  // Print the text
-
-  // Go down two lines and display "Question 1:"
-  tft.print("\nQuestion 1: ");
-  tft.println(quizAnswers[0]);
-  tft.print("\nQuestion 2: ");
-  tft.println(quizAnswers[1]);
-  tft.print("\nQuestion 3: ");
-  tft.println(quizAnswers[2]);
 }

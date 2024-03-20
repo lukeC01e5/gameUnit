@@ -34,6 +34,7 @@ void postPlayerData(String data);
 void getPlayerData();
 void connectToNetwork();
 void addPlayer();
+void writeQuestionsAtTop();
 
 std::pair<std::string, std::string> extractWordAndNumberString(const std::string &str)
 {
@@ -126,6 +127,9 @@ void loop()
         clearScreen();
         drawLineAcrossDisplay();
         writeQuestionsAtTop();
+        delay(2000); // Wait for 2 seconds
+        lootBox();
+        connectToNetwork();
       }
       else if (word == "creatureCapture")
       {
@@ -454,7 +458,7 @@ void announcePlayerAdded(const std::string &playerName)
   tft.println((playerName + " Added to\nteam!").c_str());
   delay(1500); // Wait for 1.5 seconds
   clearScreen();
-  tft.println("Add\nanother\nplayer?");
+  tft.println("\nAdd\nanother\nplayer?");
   buttonReadText();
 }
 
@@ -464,4 +468,52 @@ Player addAnotherPlayer()
   tft.println("Next Player\nName?");
   delay(1000); // Wait for 1 second
   return createPlayerFromSerial(mySerial);
+}
+
+void writeQuestionsAtTop()
+{
+  tft.setCursor(0, 0);         // Set the cursor to the top left corner
+  tft.setTextColor(TFT_WHITE); // Set the text color to white
+  tft.setTextSize(3);          // Set the text size
+  tft.println("Questions");    // Print the text
+  tft.setTextSize(2);
+
+  for (int i = 0; i < 3; ++i)
+  {
+    // Display "Question X: "
+    tft.print("\nQuestion ");
+    tft.print(i + 1);
+    tft.print(": ");
+
+    // Initially display a "?"
+    tft.println("?");
+
+    int y = tft.getCursorY(); // Save the current cursor y position
+
+    while (true) // Start of the while loop
+    {
+      // Wait for a value from 'mySerial'
+      while (!mySerial.available())
+      {
+        delay(100); // Wait for 100 milliseconds
+      }
+
+      // Read the value from 'mySerial'
+      String value = mySerial.readString();
+
+      // Trim any leading or trailing whitespace from 'value'
+      value.trim();
+
+      // If the value equals 'quizAnswers[i]', display "correct!"
+      if (value == String(quizAnswers[i]))
+      {
+        tft.fillRect(tft.getCursorX() + 140, y - tft.fontHeight(), tft.textWidth("?") + 5, tft.fontHeight(), TFT_BLACK); // Draw a black rectangle over the "?"
+        tft.setCursor(tft.getCursorX() + 140, y - tft.fontHeight());
+        tft.setTextColor(TFT_GREEN); // Set the cursor to the start of the line
+        tft.println("Correct!");
+        tft.setTextColor(TFT_WHITE); // Set the text color to white
+        break;                       // Break out of the while loop
+      }
+    }
+  }
 }
