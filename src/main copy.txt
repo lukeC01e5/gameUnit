@@ -5,18 +5,16 @@
 #include <HardwareSerial.h> // Include the HardwareSerial library
 #include <string>
 #include <WiFi.h>
-#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 
 #include "arduino_secrets.h" // Include the file with the WiFi credentials
 #include "displayFunctions.h"
 #include "objects.h"
 #include "buttonCode.h"
 
-#include <ArduinoJson.h>
-
 // #include <WiFiClientSecure.h> // Include the WiFiClientSecure library
 
-WiFiClient client;
+WiFiClientSecure client;
 
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
@@ -24,7 +22,6 @@ char pass[] = SECRET_PASS;
 bool hasPlayerBeenAdded = false; // Global variable
 Player addAnotherPlayer();
 void announcePlayerAdded(const std::string &playerName);
-Player createPlayerFromSerial(HardwareSerial &mySerial);
 
 HardwareSerial mySerial(1); // Use the second hardware serial port
 
@@ -36,102 +33,8 @@ void whatAnimal();
 void postPlayerData(String data);
 void getPlayerData();
 void connectToNetwork();
-// void addPlayer();
-std::vector<std::string> addPlayer();
+void addPlayer();
 void writeQuestionsAtTop();
-void trialFunction();
-
-std::pair<std::string, std::string> extractWordAndNumberString(const std::string &str);
-
-String playerNames[] = {"Player1", "Player2", "Player3"};
-void trialFunctionPOST(String playerNames[]);
-
-// class Player createPlayerFromSerial(HardwareSerial &mySerial);
-
-void setup()
-{
-  Serial.begin(115200);
-  mySerial.begin(9600, SERIAL_8N1, 27, 26); // Initialize serial communication on pins 27 (RX) and 26 (TX)
-  tft.init();                               // Initialize the TFT display
-  clearScreen();
-  tft.setRotation(1);
-  tft.setTextSize(3);
-  tft.setTextColor(TFT_WHITE);
-
-  // Initialize the button pins as input
-  pinMode(yesButtonPin, INPUT_PULLUP);
-  pinMode(noButtonPin, INPUT_PULLUP);
-
-  String word = "";
-
-  // client.setInsecure(); // Use this to disable certificate checking
-}
-
-void loop()
-{
-  if (!hasPlayerBeenAdded) // If a player has not been added
-  {
-    // addPlayer(); // Call the addPlayer() function
-    std::vector<std::string> playerNames = addPlayer();
-  }
-
-  if (mySerial.available()) // If there is data available to read
-  {
-    scan4challange();
-    delay(1000); // Wait for 2 seconds
-    String barcode = mySerial.readString();
-    if (!barcode.isEmpty())
-    {
-      std::string extractWord(const std::string &str);
-      tft.setCursor(0, 0);
-      std::string myText = barcode.c_str(); // Convert Arduino String to std::string
-      std::pair<std::string, std::string> result = extractWordAndNumberString(myText);
-      std::string word = result.first;
-      std::string quizA = result.second;
-
-      if (word == "challenge")
-      {
-        displayCircle();
-        tft.setCursor(0, 0);
-        std::string message = "Challenge \ncard loaded " + quizA;
-        tft.println(message.c_str());
-
-        // Copy std::string to char array
-        strncpy(quizAnswers, quizA.c_str(), sizeof(quizAnswers));
-        quizAnswers[sizeof(quizAnswers) - 1] = 0; // Ensure null-termination
-
-        clearScreen();
-        drawLineAcrossDisplay();
-        writeQuestionsAtTop();
-        delay(2000); // Wait for 2 seconds
-        lootBox();
-        connectToNetwork();
-        trialFunctionPOST(playerNames);
-        // getPlayerData();
-      }
-      else if (word == "creatureCapture")
-      {
-        clearScreen();
-        tft.println("Seek Creature\n to be your");
-        whatAnimal();
-      }
-      else
-      {
-        displayX();
-        const std::string message = "Invalid\nscan: " + word;
-        displayErrorMessage(message);
-        delay(1000); // Wait for 2 seconds
-        scan4challange();
-      }
-    }
-    else
-    {
-      Serial.println("Empty barcode");
-      const std::string message = "Empty barcode: + barcode.c_str()";
-      displayErrorMessage(message);
-    }
-  }
-}
 
 std::pair<std::string, std::string> extractWordAndNumberString(const std::string &str)
 {
@@ -168,6 +71,88 @@ std::pair<std::string, std::string> extractWordAndNumberString(const std::string
   std::string quizA = wordAndNumber.substr(dotPos + 1);
 
   return {word, quizA};
+}
+void setup()
+{
+  Serial.begin(115200);
+  mySerial.begin(9600, SERIAL_8N1, 27, 26); // Initialize serial communication on pins 27 (RX) and 26 (TX)
+  tft.init();                               // Initialize the TFT display
+  clearScreen();
+  tft.setRotation(1);
+  tft.setTextSize(3);
+  tft.setTextColor(TFT_WHITE);
+
+  // Initialize the button pins as input
+  pinMode(yesButtonPin, INPUT_PULLUP);
+  pinMode(noButtonPin, INPUT_PULLUP);
+
+  String word = "";
+
+  // client.setInsecure(); // Use this to disable certificate checking
+}
+
+void loop()
+{
+
+  if (!hasPlayerBeenAdded) // If a player has not been added
+  {
+    addPlayer(); // Call the addPlayer() function
+  }
+
+  if (mySerial.available()) // If there is data available to read
+  {
+    scan4challange();
+    delay(1000); // Wait for 2 seconds
+    String barcode = mySerial.readString();
+    if (!barcode.isEmpty())
+    {
+      std::string extractWord(const std::string &str);
+      tft.setCursor(0, 0);
+      std::string myText = barcode.c_str(); // Convert Arduino String to std::string
+      std::pair<std::string, std::string> result = extractWordAndNumberString(myText);
+      std::string word = result.first;
+      std::string quizA = result.second;
+
+      if (word == "challenge")
+      {
+        displayCircle();
+        tft.setCursor(0, 0);
+        std::string message = "Challenge \ncard loaded " + quizA;
+        tft.println(message.c_str());
+
+        // Copy std::string to char array
+        strncpy(quizAnswers, quizA.c_str(), sizeof(quizAnswers));
+        quizAnswers[sizeof(quizAnswers) - 1] = 0; // Ensure null-termination
+
+        clearScreen();
+        drawLineAcrossDisplay();
+        writeQuestionsAtTop();
+        delay(2000); // Wait for 2 seconds
+        lootBox();
+        connectToNetwork();
+      }
+      else if (word == "creatureCapture")
+      {
+        clearScreen();
+        tft.println("Seek Creature\n to be your");
+        whatAnimal();
+      }
+      else
+      {
+        displayX();
+        const std::string message = "Invalid\nscan: " + word;
+        displayErrorMessage(message);
+        delay(1000); // Wait for 2 seconds
+        scan4challange();
+      }
+    }
+    else
+    {
+      Serial.println("Empty barcode");
+      const std::string message = "Empty barcode: + barcode.c_str()";
+      displayErrorMessage(message);
+    }
+  }
 }
 
 void whatAnimal()
@@ -244,9 +229,146 @@ void connectToNetwork()
   clearScreen();
   tft.println("Connected to WiFi!");
   delay(500); // Wait for 1 second
+
+  getPlayerData();
+
+  String data = "{\
+\"firstName\": \"bob\",\
+\"lastName\": \"dylan\",\
+\"isAlive\": true,\
+\"age\": 27,\
+\"children\": [\
+\"Catherine\",\
+\"Thomas\",\
+\"Trevor\"\
+],\
+\"spouse\": null\
+}";
+
+  // postPlayerData(data);
+  delay(2000); // Wait for 10 seconds before next request
 }
-/*
- */
+
+void getPlayerData()
+{
+  client.setInsecure(); // Disable certificate checking (for testing only)
+  tft.println("Connected to ");
+  tft.println(ssid);
+
+  clearScreen();
+
+  tft.println("\nStarting connection to server...");
+
+  if (!client.connect(server, 443))
+  {
+    clearScreen();
+    tft.println("Connection failed!");
+    return; // Exit function if connection fails
+  }
+
+  clearScreen();
+  tft.println("Connected to server!");
+
+  // Make a HTTP request
+  client.println("GET /api/v1/resources HTTP/1.1");
+  client.println("Host: gameapi-2e9bb6e38339.herokuapp.com");
+  // https://gameapi-2e9bb6e38339.herokuapp.com/
+  client.println("Connection: close");
+  client.println();
+
+  // Wait for headers
+  bool headersReceived = false;
+  while (client.connected())
+  {
+    String line = client.readStringUntil('\n');
+    if (line == "\r\n")
+    { // Check for end of headers
+      headersReceived = true;
+      break;
+    }
+  }
+
+  if (!headersReceived)
+  {
+    tft.println("Failed to receive headers");
+    client.stop();
+    return;
+  }
+
+  // Read and print response
+  String response = ""; // create a String to store the response
+  while (client.available())
+  {
+    char c = client.read();
+    Serial.write(c);
+    response += c; // append each character to the response string
+  }
+  clearScreen();
+  tft.setTextSize(2);
+  tft.println(response); // print the entire response
+  Serial.println(response);
+
+  delay(3000); // Wait for 3 seconds
+
+  client.stop();
+}
+
+void postPlayerData(String data)
+{
+  client.setInsecure(); // Use this to disable certificate checking (dodgy);
+  tft.println("Connected to ");
+  tft.println(ssid);
+
+  clearScreen();
+
+  tft.println("\nStarting connection to server...");
+  if (!client.connect(server, 443))
+  {
+    clearScreen();
+    tft.println("Connection failed!");
+  }
+  else
+  {
+    clearScreen();
+    tft.println("Connected to server!");
+    // Make a HTTP request:
+    client.println("POST /api/v1/resources HTTP/1.1");
+    client.println("Host: gameapi-2e9bb6e38339.herokuapp.com");
+    client.println("Content-Type: application/json");
+    client.println("Connection: close");
+    client.print("Content-Length: ");
+    client.println(data.length());
+    client.println();
+    client.println(data);
+  }
+
+  while (client.connected())
+  {
+    String line = client.readStringUntil('\n');
+    if (line == "\r")
+    {
+      Serial.println("headers received");
+      tft.println("headers received");
+      break;
+    }
+  }
+
+  String response = ""; // create a String to store the response
+  while (client.available())
+  {
+    char c = client.read();
+    Serial.write(c);
+    response += c; // append each character to the response string
+  }
+  clearScreen();
+  tft.setTextSize(2);
+  tft.println(response); // print the entire response
+  Serial.println(response);
+
+  delay(3000); // Wait for 3 seconds
+
+  client.stop();
+}
 
 Player createPlayerFromSerial(HardwareSerial &mySerial)
 {
@@ -254,7 +376,6 @@ Player createPlayerFromSerial(HardwareSerial &mySerial)
   int playerNumber = -1;
   unsigned long startTime = millis();
   unsigned long timeout = 10000; // 5 seconds
-  // int playerNumber;
 
   while (millis() - startTime < timeout)
   {
@@ -286,12 +407,10 @@ void assignItemToPlayer(Player &player, std::string item)
   player.items.push_back(item);
 }
 
-std::vector<std::string> addPlayer()
+void addPlayer()
 {
-  std::vector<std::string> playerNames;
-
   if (hasPlayerBeenAdded)
-    return playerNames; // If a player has already been added, return immediately
+    return; // If a player has already been added, return immediately
 
   clearScreen();
   tft.setTextColor(TFT_WHITE);
@@ -302,9 +421,8 @@ std::vector<std::string> addPlayer()
 
   Player player1 = createPlayerFromSerial(mySerial);
   if (player1.name.empty())
-    return playerNames; // If player1's name is empty, return immediately
+    return; // If player1's name is empty, return immediately
 
-  playerNames.push_back(player1.name);
   announcePlayerAdded(player1.name);
   hasPlayerBeenAdded = true; // Set the global variable to true after a player has been added
 
@@ -313,10 +431,7 @@ std::vector<std::string> addPlayer()
   {
     Player player2 = addAnotherPlayer();
     if (!player2.name.empty())
-    {
-      playerNames.push_back(player2.name);
       announcePlayerAdded(player2.name);
-    }
 
     confirmResult = buttonConfirm();
     if (confirmResult == 1)
@@ -324,22 +439,22 @@ std::vector<std::string> addPlayer()
       Player player3 = addAnotherPlayer();
       if (!player3.name.empty())
       {
-        playerNames.push_back(player3.name);
         announcePlayerAdded(player3.name);
         scan4challange();
+        return;
       }
     }
     else if (confirmResult == 0)
     {
       scan4challange();
+      return;
     }
   }
   else if (confirmResult == 0)
   {
     scan4challange();
+    return;
   }
-
-  return playerNames;
 }
 
 void announcePlayerAdded(const std::string &playerName)
@@ -407,114 +522,4 @@ void writeQuestionsAtTop()
       }
     }
   }
-}
-
-void trialFunction()
-{
-  // Connect to the server
-  if (client.connect("gameapi-2e9bb6e38339.herokuapp.com", 80))
-  {
-    // Send the GET request
-    client.println("GET /api/v1/resources HTTP/1.1");
-    client.println("Host: gameapi-2e9bb6e38339.herokuapp.com");
-    client.println("Connection: close");
-    client.println();
-
-    // Wait for the response
-    while (client.connected() || client.available())
-    {
-      if (client.available())
-      {
-        String line = client.readStringUntil('\n');
-        if (line == "\r")
-        {
-          // Headers received. Print the actual data
-          while (client.available())
-          {
-            tft.fillScreen(TFT_BLACK); // Clear the screen
-            tft.setCursor(0, 0);
-            String line = client.readStringUntil('\n');
-            tft.println(line);
-          }
-          break;
-        }
-        else
-        {
-          // Print the headers
-          tft.println(line);
-        }
-      }
-    }
-  }
-  else
-  {
-    tft.println("Connection failed");
-  }
-
-  // Close the connection
-  client.stop();
-  delay(10000);
-}
-
-void trialFunctionPOST(String playerNames[])
-{
-  // Create a JSON document
-  // ArduinoJson::JsonDocument doc(200);
-  DynamicJsonDocument doc(200);
-
-  // Add data to the JSON document
-  doc["firstName"] = playerNames[0];
-  doc["secondPlayerName"] = playerNames[1];
-  doc["thirdPlayerName"] = playerNames[2];
-
-  // Convert the JSON document to a string
-  String jsonData;
-  serializeJson(doc, jsonData);
-
-  // Connect to the server
-  if (client.connect("gameapi-2e9bb6e38339.herokuapp.com", 80))
-  {
-    // Send the POST request
-    client.println("POST /api/v1/resources HTTP/1.1");
-    client.println("Host: gameapi-2e9bb6e38339.herokuapp.com");
-    client.println("Content-Type: application/json");
-    client.print("Content-Length: ");
-    client.println(jsonData.length());
-    client.println();
-    client.println(jsonData);
-
-    // Wait for the response
-    while (client.connected() || client.available())
-    {
-      if (client.available())
-      {
-        String line = client.readStringUntil('\n');
-        if (line == "\r")
-        {
-          // Headers received. Print the actual data
-          tft.fillScreen(TFT_BLACK); // Clear the screen
-          tft.setCursor(0, 0);
-          while (client.available())
-          {
-            String line = client.readStringUntil('\n');
-            tft.println(line);
-          }
-          break;
-        }
-        else
-        {
-          // Print the headers
-          tft.println(line);
-        }
-      }
-    }
-  }
-  else
-  {
-    tft.println("Connection failed");
-  }
-
-  // Close the connection
-  client.stop();
-  delay(10000);
 }
