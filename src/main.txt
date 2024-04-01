@@ -1,12 +1,9 @@
 #include <Arduino.h>
-#include <ostream>
 #include <TFT_eSPI.h>       // Include the TFT library
 #include <SPI.h>            // Include the SPI library
 #include <HardwareSerial.h> // Include the HardwareSerial library
-#include <string>
 #include <WiFi.h>
 #include <WiFiClient.h>
-
 #include "arduino_secrets.h" // Include the file with the WiFi credentials
 #include "displayFunctions.h"
 #include "objects.h"
@@ -23,12 +20,10 @@ char pass[] = SECRET_PASS;
 
 bool hasPlayerBeenAdded = false; // Global variable
 Player addAnotherPlayer();
-void announcePlayerAdded(const std::string &playerName);
+void announcePlayerAdded(const std::string &playerName, std::vector<std::string> &playerNames);
 Player createPlayerFromSerial(HardwareSerial &mySerial);
 
 HardwareSerial mySerial(1); // Use the second hardware serial port
-
-// const char *serverName = "https://gameapi-2e9bb6e38339.herokuapp.com";
 
 const char *server = "https://gameapi-2e9bb6e38339.herokuapp.com";
 
@@ -36,17 +31,16 @@ void whatAnimal();
 void postPlayerData(String data);
 void getPlayerData();
 void connectToNetwork();
-// void addPlayer();
-std::vector<std::string> addPlayer();
+// std::vector<std::string> addPlayer();
+void addPlayer();
+
 void writeQuestionsAtTop();
 void trialFunction();
+void trialFunctionPOST(String playerNames[]);
 
 std::pair<std::string, std::string> extractWordAndNumberString(const std::string &str);
 
-String playerNames[] = {"Player1", "Player2", "Player3"};
-void trialFunctionPOST(String playerNames[]);
-
-// class Player createPlayerFromSerial(HardwareSerial &mySerial);
+String playerNames[] = {"", "", ""}; // Array to store the player names
 
 void setup()
 {
@@ -72,13 +66,14 @@ void loop()
   if (!hasPlayerBeenAdded) // If a player has not been added
   {
     // addPlayer(); // Call the addPlayer() function
-    std::vector<std::string> playerNames = addPlayer();
+    // std::vector<std::string> playerNames =
+    addPlayer();
   }
 
   if (mySerial.available()) // If there is data available to read
   {
     scan4challange();
-    delay(1000); // Wait for 2 seconds
+    delay(500); // Wait for 2 seconds
     String barcode = mySerial.readString();
     if (!barcode.isEmpty())
     {
@@ -277,7 +272,8 @@ Player createPlayerFromSerial(HardwareSerial &mySerial)
     }
   }
 
-  Player player(playerName, 100, "noCreature"); // Default healthLevel and mainCreature
+  // Player player(playerName, 100, "noCreature"); // Need to unedit this to return it to normal
+  Player player(playerName, 100, "noCreature");
   return player;
 }
 
@@ -286,7 +282,8 @@ void assignItemToPlayer(Player &player, std::string item)
   player.items.push_back(item);
 }
 
-std::vector<std::string> addPlayer()
+// std::vector<std::string> addPlayer()
+void addPlayer()
 {
   std::vector<std::string> playerNames;
 
@@ -305,7 +302,7 @@ std::vector<std::string> addPlayer()
     return playerNames; // If player1's name is empty, return immediately
 
   playerNames.push_back(player1.name);
-  announcePlayerAdded(player1.name);
+  announcePlayerAdded(player1.name, playerNames);
   hasPlayerBeenAdded = true; // Set the global variable to true after a player has been added
 
   int confirmResult = buttonConfirm();
@@ -315,7 +312,7 @@ std::vector<std::string> addPlayer()
     if (!player2.name.empty())
     {
       playerNames.push_back(player2.name);
-      announcePlayerAdded(player2.name);
+      announcePlayerAdded(player2.name, playerNames);
     }
 
     confirmResult = buttonConfirm();
@@ -325,7 +322,7 @@ std::vector<std::string> addPlayer()
       if (!player3.name.empty())
       {
         playerNames.push_back(player3.name);
-        announcePlayerAdded(player3.name);
+        announcePlayerAdded(player3.name, playerNames);
         scan4challange();
       }
     }
@@ -342,7 +339,7 @@ std::vector<std::string> addPlayer()
   return playerNames;
 }
 
-void announcePlayerAdded(const std::string &playerName)
+void announcePlayerAdded(const std::string &playerName, std::vector<std::string> &playerNames)
 {
   clearScreen();
   tft.println((playerName + " Added to\nteam!").c_str());
@@ -351,6 +348,9 @@ void announcePlayerAdded(const std::string &playerName)
   tft.setTextWrap(true);
   tft.println("\nAdd\nanother\nplayer?");
   buttonReadText();
+
+  // Add playerName to playerNames
+  playerNames.push_back(playerName);
 }
 
 Player addAnotherPlayer()
@@ -458,6 +458,7 @@ void trialFunction()
 
 void trialFunctionPOST(String playerNames[])
 {
+  tft.setTextSize(2);
   // Create a JSON document
   // ArduinoJson::JsonDocument doc(200);
   DynamicJsonDocument doc(200);
