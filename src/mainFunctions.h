@@ -1,5 +1,3 @@
-
-
 #ifndef MAIN_FUNCTIONS_H
 #define MAIN_FUNCTIONS_H
 
@@ -9,17 +7,23 @@
 #include <HardwareSerial.h> // Include the HardwareSerial library
 #include <WiFi.h>
 #include <WiFiClient.h>
+#include <sstream>
+#include <ArduinoJson.h>
+
 #include "arduino_secrets.h" // Include the file with the WiFi credentials
 #include "displayFunctions.h"
 #include "objects.h"
 #include "buttonCode.h"
+// #include "treasureUnlock.h"
 
-#include <ArduinoJson.h>
+char quizAnswers[10];
+
+extern TFT_eSPI tft;
 
 bool hasPlayerBeenAdded = false; // Global variable
-// Player addAnotherPlayer();
-// void announcePlayerAdded(const std::string &playerName, std::vector<std::string> &playerNames);
-// Player createPlayerFromSerial(HardwareSerial &mySerial);
+
+std::vector<std::string> playerNames;
+// String playerNames[] = {"", "", ""}; // Array to store the player names
 
 HardwareSerial mySerial(1); // Use the second hardware serial port
 
@@ -30,10 +34,11 @@ char pass[] = SECRET_PASS;
 
 #endif
 
-void announcePlayerAdded(const std::string &playerName, std::vector<std::string> &playerNames);
+// void announcePlayerAdded(const std::string &playerName, std::vector<std::string> &playerNames);
+std::string announcePlayerAdded(const std::string &playerName);
 Player addAnotherPlayer();
 
-String playerNames[] = {"", "", ""}; // Array to store the player names
+void wrongAnswer();
 
 std::pair<std::string, std::string> extractWordAndNumberString(const std::string &str)
 {
@@ -147,8 +152,6 @@ void connectToNetwork()
     tft.println("Connected to WiFi!");
     delay(500); // Wait for 1 second
 }
-/*
- */
 
 Player createPlayerFromSerial(HardwareSerial &mySerial)
 {
@@ -186,7 +189,7 @@ Player createPlayerFromSerial(HardwareSerial &mySerial)
 
 std::vector<std::string> addPlayer()
 {
-    std::vector<std::string> playerNames;
+    // std::vector<std::string> playerNames;
 
     if (hasPlayerBeenAdded)
         return playerNames; // If a player has already been added, return immediately
@@ -202,18 +205,26 @@ std::vector<std::string> addPlayer()
     if (player1.name.empty())
         return playerNames; // If player1's name is empty, return immediately
 
-    playerNames.push_back(player1.name);
-    announcePlayerAdded(player1.name, playerNames);
+    std::string player1Name = announcePlayerAdded(player1.name);
+    // playerNames.push_back(player1Name);
+
+    std::string playerNamesString;
+    for (const auto &name : playerNames)
+    {
+        playerNamesString += name + ",";
+    }
+
     hasPlayerBeenAdded = true; // Set the global variable to true after a player has been added
 
     int confirmResult = buttonConfirm();
     if (confirmResult == 1)
     {
+        playerNames.push_back(player1Name);
         Player player2 = addAnotherPlayer();
         if (!player2.name.empty())
         {
-            playerNames.push_back(player2.name);
-            announcePlayerAdded(player2.name, playerNames);
+            std::string player2Name = announcePlayerAdded(player2.name);
+            playerNames.push_back(player2Name);
         }
 
         confirmResult = buttonConfirm();
@@ -222,8 +233,8 @@ std::vector<std::string> addPlayer()
             Player player3 = addAnotherPlayer();
             if (!player3.name.empty())
             {
-                playerNames.push_back(player3.name);
-                announcePlayerAdded(player3.name, playerNames);
+                std::string player3Name = announcePlayerAdded(player3.name);
+                playerNames.push_back(player3Name);
                 scan4challange();
             }
         }
@@ -237,15 +248,16 @@ std::vector<std::string> addPlayer()
         scan4challange();
     }
 
-    for (int i = 0; i < playerNames.size() - 1; i++)
+    std::stringstream ss(playerNamesString);
+    std::string token;
+    while (std::getline(ss, token, ','))
     {
-        playerNames[i] += ',';
+        playerNames.push_back(token);
     }
     return playerNames;
 }
 
-void announcePlayerAdded(const std::string &playerName, std::vector<std::string> &playerNames)
-
+std::string announcePlayerAdded(const std::string &playerName)
 {
     clearScreen();
     tft.println((playerName + " Added to\nteam!").c_str());
@@ -255,8 +267,7 @@ void announcePlayerAdded(const std::string &playerName, std::vector<std::string>
     tft.println("\nAdd\nanother\nplayer?");
     buttonReadText();
 
-    // Add playerName to playerNames
-    playerNames.push_back(playerName);
+    return playerName;
 }
 
 Player addAnotherPlayer()
@@ -274,18 +285,18 @@ void assignItemToPlayer(Player &player, std::string item)
 
 void writeQuestionsAtTop()
 {
-    tft.setCursor(0, 0);         // Set the cursor to the top left corner
-    tft.setTextColor(TFT_WHITE); // Set the text color to white
+    tft.setCursor(0, 3);
+    tft.setTextColor(TFT_WHITE); // Set the text color to white        // Set the cursor to the top left corner
     tft.setTextSize(3);          // Set the text size
-    tft.println("Questions");    // Print the text
+    tft.println(" Questions");   // Print the text
     tft.setTextSize(2);
 
     for (int i = 0; i < 3; ++i)
     {
         // Display "Question X: "
-        tft.print("\nQuestion ");
+        tft.print("\n Question ");
         tft.print(i + 1);
-        tft.print(": ");
+        tft.print(":");
 
         // Initially display a "?"
         tft.println("?");
@@ -312,9 +323,15 @@ void writeQuestionsAtTop()
                 tft.fillRect(tft.getCursorX() + 140, y - tft.fontHeight(), tft.textWidth("?") + 5, tft.fontHeight(), TFT_BLACK); // Draw a black rectangle over the "?"
                 tft.setCursor(tft.getCursorX() + 140, y - tft.fontHeight());
                 tft.setTextColor(TFT_GREEN); // Set the cursor to the start of the line
-                tft.println("Correct!");
+                tft.println("Correct!");     // Print "Correct!"
                 tft.setTextColor(TFT_WHITE); // Set the text color to white
                 break;                       // Break out of the while loop
+            }
+            else if (value != String(quizAnswers[i]))
+            {
+                wrongAnswer();
+                wrongAnswer();
+                wrongAnswer();
             }
         }
     }
@@ -367,7 +384,10 @@ void trialFunction()
     delay(10000);
 }
 
-void trialFunctionPOST(String playerNames[])
+// void trialFunctionPOST(String playerNames[])
+
+// Change the argument type of trialFunctionPOST to std::vector<std::string>&
+void trialFunctionPOST(std::vector<std::string> &playerNames)
 {
     tft.setTextSize(2);
     // Create a JSON document
@@ -383,8 +403,10 @@ void trialFunctionPOST(String playerNames[])
 
     // Add data to the JSON document
     doc["firstName"] = playerNames[0];
-    doc["secondPlayerName"] = playerNames[1];
-    doc["thirdPlayerName"] = playerNames[2];
+    doc["secondName"] = playerNames[1];
+    doc["thirdName"] = playerNames[2];
+    // doc["creature"] = "T-rex";
+    //  doc["Item"]
 
     // Convert the JSON document to a string
     String jsonData;
@@ -422,7 +444,6 @@ void trialFunctionPOST(String playerNames[])
                     {
                         String line = client.readStringUntil('\n');
                         tft.println(line);
-                        displayCircle();
                     }
                     break;
                 }

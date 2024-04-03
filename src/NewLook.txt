@@ -4,10 +4,9 @@ current problmes:
 trialFunctionPOST() is not posting data, but all the playeres names are blanks
 need to figiure out if its more important be multi player or single player,
 Multiplayer is going to create real problems with the current code
-still tring to figure out how close conection to client properly 
+still tring to figure out how close conection to client properly
 
 */
-
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -19,13 +18,7 @@ still tring to figure out how close conection to client properly
 
 #include "arduino_secrets.h" // Include the file with the WiFi credentials
 #include "mainFunctions.h"
-
-// WiFiClient client;
-// char ssid[] = SECRET_SSID;
-// char pass[] = SECRET_PASS;
-
-// bool hasPlayerBeenAdded = false;
-
+#include "displayFunctions.h"
 std::vector<std::string> addPlayer();
 
 void connectToNetwork();
@@ -33,6 +26,7 @@ std::pair<std::string, std::string> extractWordAndNumberString(const std::string
 void whatAnimal();
 void trialFunction();
 void trialFunctionPOST(String playerNames[]);
+void wrongAnswer();
 
 void setup()
 {
@@ -89,6 +83,7 @@ void loop()
         delay(2000); // Wait for 2 seconds
         lootBox();
         connectToNetwork();
+        unlock();
         trialFunctionPOST(playerNames);
         //  getPlayerData();
       }

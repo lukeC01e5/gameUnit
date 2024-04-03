@@ -1,12 +1,18 @@
 
-#include <TFT_eSPI.h> // Include the TFT_eSPI library
+#ifndef DISPLAYFUNCTIONS_H
+#define DISPLAYFUNCTIONS_H
 
+#include <TFT_eSPI.h> // Include the TFT_eSPI library
 #include "Trex.h"     // Include the T-Rex image
 #include "treasure.h" // Include the treasure image
+// #include "treasureUnlock.h" // Include the treasure2 image
 
-TFT_eSPI tft; // Create an instance of the TFT class
+#include <AnimatedGIF.h>
+// void GIFDraw(GIFDRAW *pDraw);
 
-char quizAnswers[] = "000";
+extern TFT_eSPI tft;
+
+// #define GIF_IMAGE treasure2 //  No DMA  63 fps, DMA:  71fps
 
 void clearScreen()
 {
@@ -156,3 +162,45 @@ void drawLineAcrossDisplay()
   int linePosition = tft.height() / 4;                                 // Calculate the position of the line
   tft.drawLine(0, linePosition, tft.width(), linePosition, TFT_WHITE); // Draw the line
 }
+/*
+void unlock()
+{
+#define GIF_IMAGE treasureUnlock
+
+  tft.fillScreen(TFT_BLACK);
+  gif.begin(BIG_ENDIAN_PIXELS);
+
+  // gif.begin(BIG_ENDIAN_PIXELS);
+  //  Put your main code here, to run repeatedly:
+  if (gif.open((uint8_t *)GIF_IMAGE, sizeof(GIF_IMAGE), GIFDraw))
+  {
+    tft.startWrite(); // The TFT chip slect is locked low
+    while (gif.playFrame(true, NULL))
+    {
+      yield();
+    }
+    gif.close();
+    tft.endWrite(); // Release TFT chip select for other SPI devices
+  }
+}
+*/
+
+void wrongAnswer()
+{
+  // Draw a 3 pixel wide red border
+  tft.drawRect(0, 0, tft.width(), tft.height(), TFT_RED);
+  tft.drawRect(1, 1, tft.width() - 2, tft.height() - 2, TFT_RED);
+  tft.drawRect(2, 2, tft.width() - 4, tft.height() - 4, TFT_RED);
+
+  // Wait for half a second
+  delay(200);
+
+  // Draw a 3 pixel wide black border over the red one
+  tft.drawRect(0, 0, tft.width(), tft.height(), TFT_BLACK);
+  tft.drawRect(1, 1, tft.width() - 2, tft.height() - 2, TFT_BLACK);
+  tft.drawRect(2, 2, tft.width() - 4, tft.height() - 4, TFT_BLACK);
+
+  delay(200);
+}
+
+#endif // DISPLAYFUNCTIONS_H
