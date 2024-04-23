@@ -1,14 +1,27 @@
 #include <vector> // Add missing include statement
 #include <string>
 
+
+#include <sstream>
+
 class Player {
 public:
   std::string name;
-  int healthLevel;
   std::string mainCreature;
-  std::vector<std::string> altCreatures; // Add semicolon at the end
   std::vector<std::string> items;
 
-  Player(std::string name, int healthLevel, std::string mainCreature)
-    : name(name), healthLevel(healthLevel), mainCreature(mainCreature) {}
+  Player(const std::string &name, const std::string &mainCreature, const std::vector<std::string> &items)
+      : name(name), mainCreature(mainCreature), items(items) {}
+
+  std::string toString() const {
+    std::ostringstream oss;
+    oss << "Name: " << name << ", Main Creature: " << mainCreature;
+    oss << ", Items: ";
+    for (const auto& item : items) {
+      oss << item << " ";
+    }
+    return oss.str();
+  }
 };
+
+

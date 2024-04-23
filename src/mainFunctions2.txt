@@ -300,6 +300,11 @@ Player addAnotherPlayer()
     return createPlayerFromSerial(mySerial);
 }
 
+void assignItemToPlayer(Player &player, std::string item)
+{
+    player.items.push_back(item);
+}
+
 void writeQuestionsAtTop()
 {
     tft.setCursor(0, 3);
@@ -401,36 +406,23 @@ void trialFunction()
     delay(10000);
 }
 
+/*
+
 void trialFunctionPOST(std::vector<Player> &players)
 {
     tft.setTextSize(2);
 
-    displayCircleOrange();
-
-    tft.println("part0");
-    delay(1000);
-
-    if (players.empty())
-    {
-        tft.println("No players");
-        return;
-    }
-
     for (Player &player : players)
     {
-        clearScreen();
-        DynamicJsonDocument doc(1024);
+        // Create a JSON document
+        // DynamicJsonDocument doc(200);
 
-        // Convert player.items to a JsonArray
-        JsonArray itemsArray = doc.createNestedArray("items");
-        for (const std::string &item : player.items)
-        {
-            itemsArray.add(item);
-        }
+        JsonDocument doc(1024);
 
         // Add data to the JSON document
         doc["firstName"] = player.name;
         doc["creature"] = player.mainCreature;
+        doc["item"] = player.items; // Treat items as a single string
 
         // Convert the JSON document to a string
         String jsonData;
@@ -438,14 +430,11 @@ void trialFunctionPOST(std::vector<Player> &players)
 
         // Connect to the server
         if (client.connect("gameapi-2e9bb6e38339.herokuapp.com", 80))
-
         {
             // Send the POST request
             client.println("POST /api/v1/resources HTTP/1.1");
             client.println("Host: gameapi-2e9bb6e38339.herokuapp.com");
             client.println("Content-Type: application/json");
-            client.println("Connection: close");
-            client.println("User-Agent: Arduino/1.0");
             client.print("Content-Length: ");
             client.println(jsonData.length());
             client.println();
@@ -455,12 +444,10 @@ void trialFunctionPOST(std::vector<Player> &players)
             unsigned long timeout = millis();
             while (client.connected() || client.available())
             {
-
                 if (millis() - timeout > 5000)
                     break;
 
                 if (client.available())
-
                 {
                     String line = client.readStringUntil('\n');
                     if (line == "\r")
@@ -494,7 +481,7 @@ void trialFunctionPOST(std::vector<Player> &players)
     }
 }
 
-/*
+*/
 
 // Change the argument type of trialFunctionPOST to std::vector<std::string>&
 void trialFunctionPOST(std::vector<std::string> &playerNames)
@@ -578,12 +565,9 @@ void trialFunctionPOST(std::vector<std::string> &playerNames)
     delay(10000);
 }
 
-*/
-
-std::vector<Player> scanKey()
+void scanKey()
 {
     bool validInput = false;
-    std::vector<Player> players;
 
     while (!validInput)
     {
@@ -604,6 +588,8 @@ std::vector<Player> scanKey()
 
         // now read from Serial
         input = mySerial.readString();
+        std::vector<Player> players;
+        String word = "";
         clearScreen();
 
         std::string myText = input.c_str(); // Convert Arduino String to std::string
@@ -622,23 +608,25 @@ std::vector<Player> scanKey()
             displayKey();
             clearScreen();
             validInput = true;
-
-            players = createPlayers(playerNames);
             displayCircle();
 
-            for (const auto &player : players)
-            {
-                tft.println(player.toString().c_str());
-            }
-            delay(2000);
-            return players;
+            // std::vector<Player> players;
+            // for (const auto& name : playerNames) {
+            //    players.push_back(Player(name));
+            // }
+
+            //std::vector<Player> createPlayers(playerNames);
+
+            // tft.println(Player.toString());
+            // assignRandomValue(players);
+            return;
         }
         else
         {
             tft.println("Invalid input: " + input);
         }
     }
-    return players;
+    return;
 }
 
 void assignRandomValue(std::vector<Player> &players)
@@ -656,11 +644,9 @@ void assignRandomValue(std::vector<Player> &players)
     // Assign a random value to each player
     for (Player &player : players)
     {
-        clearScreen();
-
         int randomIndex = dis(gen);
         tft.println("item added:\n " + String(randomIndex));
-        delay(2000);
+        delay(500);
         player.items.push_back(values[randomIndex]);
 
         // Print the player's information

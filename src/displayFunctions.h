@@ -3,11 +3,13 @@
 #define DISPLAYFUNCTIONS_H
 
 #include <TFT_eSPI.h> // Include the TFT_eSPI library
+#include <AnimatedGIF.h>
+
 #include "Trex.h"     // Include the T-Rex image
 #include "treasure.h" // Include the treasure image
-// #include "treasureUnlock.h" // Include the treasure2 image
+#include "key.h"      // Include the treasure image
+// #include "treasureUnlokeyck.h" // Include the treasure2 image
 
-#include <AnimatedGIF.h>
 // void GIFDraw(GIFDRAW *pDraw);
 
 extern TFT_eSPI tft;
@@ -36,23 +38,9 @@ void lootBox()
   return;
 }
 
-void displayTrex()
-{
-  tft.fillScreen(TFT_BLACK); // Clear the screen
-
-  int16_t x = tft.width() / 2;                   // Calculate the x coordinate of the center of the screen
-  int16_t y = tft.height() / 2;                  // Calculate the y coordinate of the center of the screen
-  tft.pushImage(x - 30, y - 50, 128, 128, Trex); // Draw the T-Rex image at the center of the screen
-
-  delay(3000);               // Wait for 3 seconds
-  tft.fillScreen(TFT_BLACK); // Clear the screen
-  return;
-}
-
 void scan4challange()
 {
   tft.fillScreen(TFT_BLACK);
-
   // Draw a 3 pixel wide orange border around the screen
   tft.drawRect(0, 0, tft.width(), tft.height(), TFT_ORANGE);
   tft.drawRect(1, 1, tft.width() - 2, tft.height() - 2, TFT_ORANGE);
@@ -93,6 +81,21 @@ void displayCircle()
   int16_t radius = 50 / 2;      // Calculate the radius of the circle
 
   tft.fillCircle(x, y, radius, TFT_GREEN); // Draw the green circle
+
+  delay(1000); // Wait for 3 seconds
+
+  tft.fillScreen(TFT_BLACK); // Clear the screen
+}
+
+void displayCircleOrange()
+{
+  tft.fillScreen(TFT_BLACK); // Clear the screen
+
+  int16_t x = tft.width() / 2;  // Calculate the x coordinate of the center of the screen
+  int16_t y = tft.height() / 2; // Calculate the y coordinate of the center of the screen
+  int16_t radius = 50 / 2;      // Calculate the radius of the circle
+
+  tft.fillCircle(x, y, radius, TFT_ORANGE); // Draw the green circle
 
   delay(1000); // Wait for 3 seconds
 
@@ -201,6 +204,44 @@ void wrongAnswer()
   tft.drawRect(2, 2, tft.width() - 4, tft.height() - 4, TFT_BLACK);
 
   delay(200);
+}
+
+void displayKey()
+
+{
+  clearScreen();
+  tft.setSwapBytes(true);
+  int16_t x = tft.width() / 2;  // Calculate the x coordinate of the center of the screen
+  int16_t y = tft.height() / 2; // Calculate the y coordinate of the center of the screen
+  tft.pushImage(x - 60, y - 40, 145, 128, key);
+  return;
+}
+
+/*
+tft.fillScreen(TFT_BLACK); // Clear the screen
+// tft.setSwapBytes(true);    // Swap the byte order for the display (if colors are wrong, change this value to false)
+tft.setCursor(0, 0);
+// extern const uint8_t gifB[];
+// tft.pushImage(50, 0, 145, 128, const_cast<uint8_t *>(gifB)); // Draw the T-Rex image at the center of the screen
+
+tft.pushImage(x - 30, y - 50, 128, 148, gifB);
+
+delay(2000);
+clearScreen();
+
+*/
+
+void displayTrex()
+{
+  tft.fillScreen(TFT_BLACK); // Clear the screen
+
+  int16_t x = tft.width() / 2;                   // Calculate the x coordinate of the center of the screen
+  int16_t y = tft.height() / 2;                  // Calculate the y coordinate of the center of the screen
+  tft.pushImage(x - 30, y - 50, 128, 128, Trex); // Draw the T-Rex image at the center of the screen
+
+  delay(3000);               // Wait for 3 seconds
+  tft.fillScreen(TFT_BLACK); // Clear the screen
+  return;
 }
 
 #endif // DISPLAYFUNCTIONS_H

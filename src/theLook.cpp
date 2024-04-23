@@ -18,20 +18,22 @@ still tring to figure out how close conection to client properly
 #include "arduino_secrets.h" // Include the file with the WiFi credentials
 #include "mainFunctions.h"
 
-// WiFiClient client;
-// char ssid[] = SECRET_SSID;
-// char pass[] = SECRET_PASS;
-
-// bool hasPlayerBeenAdded = false;
+void displayKey();
 
 std::vector<std::string> addPlayer();
 
 void connectToNetwork();
 std::pair<std::string, std::string> extractWordAndNumberString(const std::string &str);
-void whatAnimal();
+String whatAnimal();
 void trialFunction();
 // void trialFunctionPOST(String playerNames[]);
-void trialFunctionPOST(std::vector<std::string> &playerNames);
+// void trialFunctionPOST(std::vector<std::string> &playerNames);
+std::vector<Player> players; // Declare the 'players' variable
+void trialFunctionPOST(std::vector<Player> &players);
+// void trialFunctionPOST(std::vector<Player> &players);
+void assignRandomValue(std::vector<Player> &players);
+
+std::vector<Player> scanKey();
 
 TFT_eSPI tft = TFT_eSPI(); // Invoke the TFT_eSPI constructor to create the TFT object
 
@@ -90,10 +92,13 @@ void loop()
                 drawLineAcrossDisplay();
                 writeQuestionsAtTop();
                 delay(2000); // Wait for 2 seconds
-                lootBox();
+                // lootBox();
                 connectToNetwork();
-                trialFunctionPOST(playerNames);
-                //  getPlayerData();
+                std::vector<Player> players = scanKey();
+                clearScreen();
+                assignRandomValue(players);
+
+                trialFunctionPOST(players); // Pass the 'players' variable to the function
             }
             else if (word == "creatureCapture")
             {
