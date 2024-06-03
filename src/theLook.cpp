@@ -26,10 +26,11 @@ std::vector<std::string> addPlayer();
 
 void connectToNetwork();
 std::pair<std::string, std::string> extractWordAndNumberString(const std::string &str);
-String whatAnimal(Player &player);
+String whatAnimal(std::vector<Player> &players);
 void trialFunction();
 std::vector<Player> players; // Declare the 'players' variable
 void trialFunctionPOST(std::vector<Player> &players);
+void addCreaturesPOST(std::vector<Player> &players);
 void assignRandomValue(std::vector<Player> &players);
 
 std::vector<Player> scanKey();
@@ -140,16 +141,15 @@ void loop()
     else if (buttonValue == 0)
     {
         clearScreen();
-        // std::vector<std::string> playerNames = addPlayer();
         tft.println("Seek Creature\n to be your");
         if (!players.empty())
         {
             for (Player &player : players)
             {
-                whatAnimal(player);
-                connectToNetwork();
-                trialFunctionPOST(players);
+                String capturedCreature = whatAnimal(players);
             }
+            connectToNetwork();
+            addCreaturesPOST(players);
         }
         else
         {

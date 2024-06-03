@@ -1,30 +1,33 @@
-#include <vector> // Add missing include statement
+#include <vector>
 #include <string>
-
-
 #include <sstream>
 
-class Player {
+class Player
+{
 public:
   std::string name;
   std::string mainCreature;
   std::vector<std::string> items;
+  std::vector<std::string> creatures; // Add this line
 
-  Player(const std::string &name, const std::string &mainCreature, const std::vector<std::string> &items)
-      : name(name), mainCreature(mainCreature), items(items) {}
+  Player(const std::string &name, const std::string &mainCreature, const std::vector<std::string> &items, const std::vector<std::string> &creatures)
+      : name(name), mainCreature(mainCreature), items(items), creatures(creatures) {} // Modify this line
 
-  std::string toString() const {
+  std::string toString() const
+  {
     std::ostringstream oss;
     oss << "Name: " << name;
-    /*
-     << ", No creature: " << mainCreature;
-    oss << ", Items: ";
-    */  
-    for (const auto& item : items) {
+
+    for (const auto &item : items)
+    {
       oss << item << " ";
+    }
+    // Add this block to print creatures
+    // oss << ", Creatures:";
+    for (const auto &creature : creatures)
+    {
+      oss << creature << " ";
     }
     return oss.str();
   }
 };
-
-

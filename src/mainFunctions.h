@@ -40,6 +40,7 @@ char pass[] = SECRET_PASS;
 
 std::string announcePlayerAdded(const std::string &playerName);
 std::vector<Player> createPlayers(const std::vector<std::string> &playerNames);
+void updatePlayers(std::vector<Player> &players, const std::string &creatureCaptured);
 
 Player addAnotherPlayer();
 
@@ -99,25 +100,14 @@ std::unordered_map<std::string, std::function<void()>> animalHandlers = {
     {"sprouty", []() { /* handle sprouty */ }},
     {"roboCrab", []() { /* handle roboCrab */ }},
     {"ghost", []() { /* handle ghost */ }},
-    {"babyTrex", []()
-     {
-         displayTrex();
-         tft.setCursor(0, 0);
-         tft.println("Keep\nCreature\nas\nyour\nchampion");
-         delay(2000); // Wait for 2 seconds
-         buttonReadText();
-         buttonConfirm();
-     }}};
+};
 
-String whatAnimal(Player &player)
+String whatAnimal(std::vector<Player> &players)
 {
     tft.println(" champion");
     delay(1000); // Wait for 1 seconds
 
     String input = ""; // Declare the variable "input"
-
-    unsigned long startMillis = millis();
-    unsigned long currentMillis = startMillis;
 
     while (!mySerial.available()) // 5 seconds timeout
     {
@@ -153,16 +143,16 @@ String whatAnimal(Player &player)
         animalHandlers[animal]();
 
         // Update the player's mainCreature
-        player.mainCreature = animal;
+        // player.mainCreature = animal;
 
         // Instruct the player to return to base
         clearScreen();
-        tft.println("creature has been captured do you want to keep the creature`");
-        delay(2000); // Wait for 1 second
+        tft.println("Creature has been captured");
+        delay(3000); // Wait for 1 second
 
         clearScreen();
 
-        tft.println("\nKeep\nCreature");
+        tft.println("\nKeep\ncreature");
         buttonReadText();
 
         if (buttonConfirm() == 1)
@@ -171,8 +161,16 @@ String whatAnimal(Player &player)
             tft.println("Return to\nbase to\nkeep");
             creatureCaptured = animal.c_str();
             delay(1000); // Wait for 2 seconds
+
+            // Convert creatureCaptured to std::string
+            std::string creatureCapturedStd = std::string(creatureCaptured.c_str());
+
+            // Update all players
+            updatePlayers(players, creatureCapturedStd);
+
             return String(creatureCaptured);
         }
+
         else if (buttonConfirm() == 0)
         {
             clearScreen();
@@ -189,6 +187,15 @@ String whatAnimal(Player &player)
     }
 
     return "";
+}
+
+void updatePlayers(std::vector<Player> &players, const std::string &creatureCaptured)
+{
+    // Add the captured creature to the creatures of all players
+    for (Player &player : players)
+    {
+        player.creatures.push_back(creatureCaptured);
+    }
 }
 
 void connectToNetwork()
@@ -235,7 +242,7 @@ Player createPlayerFromSerial(HardwareSerial &mySerial)
         }
     }
 
-    Player player(playerName, "noCreature", std::vector<std::string>());
+    Player player(playerName, "noCreature", std::vector<std::string>(), std::vector<std::string>());
     return player;
 }
 
@@ -278,7 +285,7 @@ std::vector<std::string> addPlayer()
         else if (confirmResult == 0)
         {
             clearScreen();
-            tft.println("\n  Team\n  Complete!");
+            tft.println("\n    Team\n  Complete!");
             delay(2000); // Wait for 1 second
             clearScreen();
             return playerNames;
@@ -292,7 +299,7 @@ std::vector<std::string> addPlayer()
 std::string announcePlayerAdded(const std::string &playerName)
 {
     clearScreen();
-    tft.println((playerName + "\nAdded to\nteam!").c_str());
+    tft.println((" " + playerName + "\n Added to\n team!").c_str());
     delay(1500); // Wait for 1.5 seconds
     clearScreen();
     tft.setTextWrap(true);
@@ -476,7 +483,7 @@ std::vector<Player> scanKey()
         {
             displayKey();
             tft.setCursor(0, 0);
-            tft.println("Key scanned");
+            tft.println("     Key scanned");
             delay(2000); // Wait for 2 seconds
             displayKey();
             clearScreen();
@@ -533,13 +540,116 @@ void assignRandomValue(std::vector<Player> &players)
     }
 }
 
-std::vector<Player> createPlayers(const std::vector<std::string> &playerNames)
+std::vector<Player> createPlayers(const std::vector<std::string> &names)
 {
     std::vector<Player> players;
-    for (const auto &name : playerNames)
+
+    for (const std::string &name : names)
     {
-        Player player(name, "noCreature", std::vector<std::string>());
+        Player player(name, "noCreature", std::vector<std::string>(), std::vector<std::string>());
         players.push_back(player);
     }
+
     return players;
+}
+
+void addCreaturesPOST(std::vector<Player> &players)
+{
+    tft.setTextSize(2);
+
+    displayCircleOrange();
+
+    tft.println("part0");
+    delay(1000);
+
+    if (players.empty())
+    {
+        tft.println("No players");
+        return;
+    }
+
+    tft.println("Players exist");
+    delay(2000);
+
+    for (Player &player : players)
+    {
+        clearScreen();
+
+        tft.println(("Processing player: " + player.name).c_str());
+        delay(2000);
+
+        if (player.creatures.empty())
+        {
+            tft.println("No creatures for this player");
+            delay(1000);
+            continue;
+        }
+
+        tft.println("Creatures exist for this player");
+        delay(1000);
+
+        // Connect to the server
+        if (client.connect("gameapi-2e9bb6e38339.herokuapp.com", 80))
+        {
+            tft.println("Connected to server");
+            delay(1000);
+
+            for (const std::string &creature : player.creatures)
+            {
+                tft.println(("Processing creature: " + creature).c_str());
+                delay(1000);
+
+                // Send the POST request
+                client.println(("POST /api/v1/users/" + player.name + "/add_" + creature + " HTTP/1.1").c_str());
+                client.println("Host: gameapi-2e9bb6e38339.herokuapp.com");
+                client.println("Content-Type: application/json");
+                client.println("Connection: close");
+                client.println("User-Agent: Arduino/1.0");
+                client.println("Content-Length: 0");
+                client.println();
+
+                // Wait for the response
+                unsigned long timeout = millis();
+                while (client.connected() || client.available())
+                {
+                    if (millis() - timeout > 5000)
+                        break;
+
+                    if (client.available())
+                    {
+                        String line = client.readStringUntil('\n');
+                        if (line == "\r")
+                        {
+                            // Headers received. Print the actual data
+                            tft.fillScreen(TFT_BLACK); // Clear the screen
+                            tft.setCursor(0, 0);
+                            while (client.available())
+                            {
+                                String line = client.readStringUntil('\n');
+                                tft.println(line);
+                                tft.println("part4");
+                                delay(1000);
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            // Print the headers
+                            tft.println("part5");
+                            delay(1000);
+                        }
+                    }
+                }
+
+                // Close the connection
+                client.stop();
+                delay(1000);
+            }
+        }
+        else
+        {
+            tft.println("Connection failed");
+            delay(2000);
+        }
+    }
 }
