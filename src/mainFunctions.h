@@ -17,6 +17,8 @@
 #include "displayFunctions.h"
 #include "objects.h"
 #include "buttonCode.h"
+#include <chrono>
+
 // #include "treasureUnlock.h"
 
 char quizAnswers[10];
@@ -117,12 +119,11 @@ String whatAnimal(Player &player)
     unsigned long startMillis = millis();
     unsigned long currentMillis = startMillis;
 
-    while (!mySerial.available() && (currentMillis - startMillis <= 20000)) // 5 seconds timeout
+    while (!mySerial.available()) // 5 seconds timeout
     {
         // wait for data to be available
         delay(100); // optional delay to prevent the loop from running too fast
         animateEyes();
-        currentMillis = millis();
     }
 
     if (mySerial.available())
@@ -137,7 +138,7 @@ String whatAnimal(Player &player)
     }
 
     String word = "";
-    clearScreen();
+    // clearScreen();
 
     std::string myText = input.c_str(); // Convert Arduino String to std::string
 
@@ -157,9 +158,12 @@ String whatAnimal(Player &player)
         // Instruct the player to return to base
         clearScreen();
         tft.println("creature has been captured do you want to keep the creature`");
-        delay(1000); // Wait for 1 second
+        delay(2000); // Wait for 1 second
 
         clearScreen();
+
+        tft.println("\nKeep\nCreature");
+        buttonReadText();
 
         if (buttonConfirm() == 1)
         {
@@ -274,7 +278,7 @@ std::vector<std::string> addPlayer()
         else if (confirmResult == 0)
         {
             clearScreen();
-            tft.println("\n Team\nComplete!");
+            tft.println("\n  Team\n  Complete!");
             delay(2000); // Wait for 1 second
             clearScreen();
             return playerNames;
@@ -497,13 +501,18 @@ std::vector<Player> scanKey()
 }
 
 // Create a random number generator
-std::random_device rd;
-std::mt19937 gen(rd());
+// std::random_device rd;
+// std::mt19937 gen(rd());
 
 void assignRandomValue(std::vector<Player> &players)
 {
     // Values vector
     static const std::vector<std::string> values = {"crystal", "plant", "meat", "water", "coin"};
+
+    // Seed the random number generator with the current time
+    auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    std::mt19937 gen(seed);
+
     std::uniform_int_distribution<> dis(0, values.size() - 1);
 
     displayCircleOrange();

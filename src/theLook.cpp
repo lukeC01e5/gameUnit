@@ -121,6 +121,7 @@ void loop()
                 writeQuestionsAtTop();
                 delay(2000); // Wait for 2 seconds
                 // lootBox();
+                clearScreen();
                 scanKey();
                 connectToNetwork();
                 clearScreen();
@@ -139,15 +140,14 @@ void loop()
     else if (buttonValue == 0)
     {
         clearScreen();
-        std::vector<std::string> playerNames = addPlayer();
-        //  std::vector<Player> scanKey();
-        // players = scanKey();
+        // std::vector<std::string> playerNames = addPlayer();
         tft.println("Seek Creature\n to be your");
         if (!players.empty())
         {
             for (Player &player : players)
             {
                 whatAnimal(player);
+                connectToNetwork();
                 trialFunctionPOST(players);
             }
         }

@@ -143,7 +143,7 @@ void buttonReadText()
   tft.setTextSize(2);
   tft.setTextColor(TFT_WHITE);
   tft.setCursor(0, 0);
-  tft.println("\n               yes->\n\n\n\n               no->");
+  tft.println("\n               yes->\n\n\n\n\n               no->");
   tft.setTextSize(3);
 }
 
@@ -216,7 +216,6 @@ void displayKey()
   tft.pushImage(x - 60, y - 40, 145, 128, key);
   return;
 }
-
 
 void displayTrex()
 {
