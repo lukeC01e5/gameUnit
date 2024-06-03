@@ -1,18 +1,16 @@
 
-//int buttonValue = -1; // Declare the buttonValue variable
-
-
+// int buttonValue = -1; // Declare the buttonValue variable
 
 volatile int buttonValue = -1; // Global variable to hold the button value
 
 void yesButtonPressed()
 {
-    buttonValue = 1;
+  buttonValue = 1;
 }
 
 void noButtonPressed()
 {
-    buttonValue = 0;
+  buttonValue = 0;
 }
 
 const int yesButtonPin = 35; // Button1 on the TTGO T-Display

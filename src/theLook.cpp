@@ -6,6 +6,10 @@ need to figiure out if its more important be multi player or single player,
 Multiplayer is going to create real problems with the current code
 still tring to figure out how close conection to client properly
 
+
+gets as far as Earn Loot or capture creature, then stops you can press a button but it will just repeat
+itself
+
 */
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -13,8 +17,6 @@ still tring to figure out how close conection to client properly
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
-#include "arduino_secrets.h" // Include the file with the WiFi credentials
-
 #include "arduino_secrets.h" // Include the file with the WiFi credentials
 #include "mainFunctions.h"
 
@@ -24,13 +26,10 @@ std::vector<std::string> addPlayer();
 
 void connectToNetwork();
 std::pair<std::string, std::string> extractWordAndNumberString(const std::string &str);
-String whatAnimal();
+String whatAnimal(Player &player);
 void trialFunction();
-// void trialFunctionPOST(String playerNames[]);
-// void trialFunctionPOST(std::vector<std::string> &playerNames);
 std::vector<Player> players; // Declare the 'players' variable
 void trialFunctionPOST(std::vector<Player> &players);
-// void trialFunctionPOST(std::vector<Player> &players);
 void assignRandomValue(std::vector<Player> &players);
 
 std::vector<Player> scanKey();
@@ -60,13 +59,42 @@ void loop()
 {
     if (!hasPlayerBeenAdded)
     {
-        addPlayer();
-    }
+        playerNames = addPlayer();
+        players = createPlayers(playerNames);
 
-    if (mySerial.available()) // If there is data available to read
+        for (const auto &player : players)
+        {
+            std::string playerStr = player.toString();
+            tft.println(playerStr.c_str());
+            delay(2000);
+        }
+    }
+    clearScreen();
+    tft.setTextSize(3);
+    tft.println("Earn loot ->\n\n\nCapture\ncreature  ->");
+
+    int buttonValue = buttonConfirm();
+    while (buttonValue != 0 && buttonValue != 1)
     {
-        scan4challange();
+        delay(100); // Wait for 100 milliseconds
+        buttonValue = buttonConfirm();
+    }
+    clearScreen();
+
+    if (buttonValue == 1)
+    {
         delay(500); // Wait for 2 seconds
+        scan4challange();
+        // Loop until data is available to read
+        while (!mySerial.available())
+        {
+            delay(100); // Wait for 100 milliseconds before checking again
+        }
+
+        // delay(500); // Wait for 2 seconds
+
+        // ... (the rest of your function remains the same)
+
         String barcode = mySerial.readString();
         if (!barcode.isEmpty())
         {
@@ -93,26 +121,12 @@ void loop()
                 writeQuestionsAtTop();
                 delay(2000); // Wait for 2 seconds
                 // lootBox();
+                scanKey();
                 connectToNetwork();
-                std::vector<Player> players = scanKey();
                 clearScreen();
                 assignRandomValue(players);
 
                 trialFunctionPOST(players); // Pass the 'players' variable to the function
-            }
-            else if (word == "creatureCapture")
-            {
-                clearScreen();
-                tft.println("Seek Creature\n to be your");
-                whatAnimal();
-            }
-            else
-            {
-                displayX();
-                const std::string message = "Invalid\nscan: " + word;
-                displayErrorMessage(message);
-                delay(1000); // Wait for 2 seconds
-                scan4challange();
             }
         }
         else
@@ -121,5 +135,30 @@ void loop()
             const std::string message = "Empty barcode: + barcode.c_str()";
             displayErrorMessage(message);
         }
+    }
+    else if (buttonValue == 0)
+    {
+        clearScreen();
+        std::vector<std::string> playerNames = addPlayer();
+        //  std::vector<Player> scanKey();
+        // players = scanKey();
+        tft.println("Seek Creature\n to be your");
+        if (!players.empty())
+        {
+            for (Player &player : players)
+            {
+                whatAnimal(player);
+                trialFunctionPOST(players);
+            }
+        }
+        else
+        {
+            clearScreen();
+            tft.println("No players available");
+        }
+    }
+    else
+    {
+        displayErrorMessage("Invalid button value");
     }
 }

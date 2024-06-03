@@ -49,7 +49,7 @@ void scan4challange()
   tft.setTextSize(3);
   tft.setTextColor(TFT_WHITE);
   tft.setCursor(0, 0);
-  tft.println("\n  Scan\n  challange\n  card.....");
+  tft.println("\n Scan\n bounty card\n to earn loot");
 }
 
 void displayX()
@@ -217,19 +217,6 @@ void displayKey()
   return;
 }
 
-/*
-tft.fillScreen(TFT_BLACK); // Clear the screen
-// tft.setSwapBytes(true);    // Swap the byte order for the display (if colors are wrong, change this value to false)
-tft.setCursor(0, 0);
-// extern const uint8_t gifB[];
-// tft.pushImage(50, 0, 145, 128, const_cast<uint8_t *>(gifB)); // Draw the T-Rex image at the center of the screen
-
-tft.pushImage(x - 30, y - 50, 128, 148, gifB);
-
-delay(2000);
-clearScreen();
-
-*/
 
 void displayTrex()
 {

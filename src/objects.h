@@ -15,8 +15,11 @@ public:
 
   std::string toString() const {
     std::ostringstream oss;
-    oss << "Name: " << name << ", Main Creature: " << mainCreature;
+    oss << "Name: " << name;
+    /*
+     << ", No creature: " << mainCreature;
     oss << ", Items: ";
+    */  
     for (const auto& item : items) {
       oss << item << " ";
     }
