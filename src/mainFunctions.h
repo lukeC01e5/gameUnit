@@ -12,6 +12,7 @@
 #include <random>
 #include <vector>
 #include <unordered_map>
+#include <cstring> // For strncpy
 
 #include "arduino_secrets.h" // Include the file with the WiFi credentials
 #include "displayFunctions.h"
@@ -35,8 +36,12 @@ HardwareSerial mySerial(1); // Use the second hardware serial port
 
 WiFiClient client;
 
-char ssid[] = SECRET_SSID;
-char pass[] = SECRET_PASS;
+const int MAX_SIZE = 32;
+std::string network = "YourNetworkName"; // Example network name
+std::string pass_w = "YourPassword";     // Example password
+
+char ssid[MAX_SIZE];
+char pass[MAX_SIZE];
 
 std::string announcePlayerAdded(const std::string &playerName);
 std::vector<Player> createPlayers(const std::vector<std::string> &playerNames);
@@ -46,7 +51,7 @@ Player addAnotherPlayer();
 
 #endif
 
-// std::string announcePlayerAdded(const std::string &playerName);
+void initializeNetworkCredentials();
 
 void wrongAnswer();
 void assignRandomValue(std::vector<Player> &players);
@@ -200,6 +205,8 @@ void updatePlayers(std::vector<Player> &players, const std::string &creatureCapt
 
 void connectToNetwork()
 {
+
+    delay(2000);            // Wait for 1 second
     WiFi.begin(ssid, pass); // Connect to the network
     delay(1000);            // Wait for 1 second
 
@@ -481,6 +488,21 @@ std::vector<Player> scanKey()
 
         if (key == "key")
         {
+            // Find the '&' symbol in the string
+            size_t ampersandPos = number.find('&');
+            if (ampersandPos != std::string::npos) // Check if '&' was found
+            {
+                // Split the string into two parts
+                network = number.substr(0, ampersandPos);
+                pass_w = number.substr(ampersandPos + 1);
+
+                // Optionally, you can add code here to handle the network and pass strings
+            }
+            else
+            {
+                break; // handle the case where '&' is not found, if necessary
+            }
+
             displayKey();
             tft.setCursor(0, 0);
             tft.println("     Key scanned");
@@ -506,10 +528,6 @@ std::vector<Player> scanKey()
     }
     return players;
 }
-
-// Create a random number generator
-// std::random_device rd;
-// std::mt19937 gen(rd());
 
 void assignRandomValue(std::vector<Player> &players)
 {
@@ -652,4 +670,13 @@ void addCreaturesPOST(std::vector<Player> &players)
             delay(2000);
         }
     }
+}
+
+void initializeNetworkCredentials()
+{
+    strncpy(ssid, network.c_str(), MAX_SIZE - 1); // Ensure null-termination
+    ssid[MAX_SIZE - 1] = '\0';                    // Explicitly null-terminate
+
+    strncpy(pass, pass_w.c_str(), MAX_SIZE - 1); // Ensure null-termination
+    pass[MAX_SIZE - 1] = '\0';                   // Explicitly null-terminate
 }

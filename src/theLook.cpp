@@ -123,7 +123,11 @@ void loop()
                 delay(2000); // Wait for 2 seconds
                 // lootBox();
                 clearScreen();
+
                 scanKey();
+                
+                initializeNetworkCredentials();
+
                 connectToNetwork();
                 clearScreen();
                 assignRandomValue(players);
