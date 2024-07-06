@@ -17,7 +17,6 @@ itself
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
-#include "arduino_secrets.h" // Include the file with the WiFi credentials
 #include "mainFunctions.h"
 
 void displayKey();
@@ -32,6 +31,7 @@ std::vector<Player> players; // Declare the 'players' variable
 void trialFunctionPOST(std::vector<Player> &players);
 void addCreaturesPOST(std::vector<Player> &players);
 void assignRandomValue(std::vector<Player> &players);
+void extractWifiDetails();
 
 std::vector<Player> scanKey();
 
@@ -92,10 +92,6 @@ void loop()
             delay(100); // Wait for 100 milliseconds before checking again
         }
 
-        // delay(500); // Wait for 2 seconds
-
-        // ... (the rest of your function remains the same)
-
         String barcode = mySerial.readString();
         if (!barcode.isEmpty())
         {
@@ -125,10 +121,10 @@ void loop()
                 clearScreen();
 
                 scanKey();
-                
-                initializeNetworkCredentials();
 
-                connectToNetwork();
+                // initializeNetworkCredentials();
+
+                // connectToNetwork();
                 clearScreen();
                 assignRandomValue(players);
 
@@ -152,7 +148,10 @@ void loop()
             {
                 String capturedCreature = whatAnimal(players);
             }
-            connectToNetwork();
+
+            extractWifiDetails();
+            // initializeNetworkCredentials();
+            // connectToNetwork();
             addCreaturesPOST(players);
         }
         else

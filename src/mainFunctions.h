@@ -13,12 +13,12 @@
 #include <vector>
 #include <unordered_map>
 #include <cstring> // For strncpy
-
-#include "arduino_secrets.h" // Include the file with the WiFi credentials
 #include "displayFunctions.h"
 #include "objects.h"
 #include "buttonCode.h"
 #include <chrono>
+#include <utility> // Include this for std::pair
+#include <string>  // Include this for std::string
 
 // #include "treasureUnlock.h"
 
@@ -50,8 +50,6 @@ void updatePlayers(std::vector<Player> &players, const std::string &creatureCapt
 Player addAnotherPlayer();
 
 #endif
-
-void initializeNetworkCredentials();
 
 void wrongAnswer();
 void assignRandomValue(std::vector<Player> &players);
@@ -168,7 +166,7 @@ String whatAnimal(std::vector<Player> &players)
             delay(1000); // Wait for 2 seconds
 
             // Convert creatureCaptured to std::string
-            std::string creatureCapturedStd = std::string(creatureCaptured.c_str());
+            std::string creatureCapturedStd = creatureCaptured.c_str();
 
             // Update all players
             updatePlayers(players, creatureCapturedStd);
@@ -188,7 +186,6 @@ String whatAnimal(std::vector<Player> &players)
     {
         tft.println("Invalid input: " + input);
         // scan4challange();
-        return "";
     }
 
     return "";
@@ -205,8 +202,11 @@ void updatePlayers(std::vector<Player> &players, const std::string &creatureCapt
 
 void connectToNetwork()
 {
+    tft.println(ssid);
+    tft.println(pass);
+    delay(2000);
 
-    delay(2000);            // Wait for 1 second
+    // Wait for 1 second
     WiFi.begin(ssid, pass); // Connect to the network
     delay(1000);            // Wait for 1 second
 
@@ -214,11 +214,11 @@ void connectToNetwork()
     {
         clearScreen();
         tft.println("Connecting to WiFi...");
-        // delay(1000); // Wait for 1 second
+        delay(1000); // Wait for 1 second
     }
     clearScreen();
     tft.println("Connected to WiFi!");
-    delay(500); // Wait for 1 second
+    delay(1000); // Wait for 1 second
 }
 
 Player createPlayerFromSerial(HardwareSerial &mySerial)
@@ -384,9 +384,6 @@ void trialFunctionPOST(std::vector<Player> &players)
 
     displayCircleOrange();
 
-    tft.println("part0");
-    delay(1000);
-
     if (players.empty())
     {
         tft.println("No players");
@@ -453,6 +450,65 @@ void trialFunctionPOST(std::vector<Player> &players)
     }
 }
 
+void extractWifiDetails()
+{
+    displayKey();
+    tft.setCursor(0, 0);
+    tft.setTextSize(2);
+    clearScreen();
+    tft.println("     scanning....");
+    delay(1000); // Wait for 2 seconds
+
+    String input = "";
+    while (!mySerial.available())
+    {
+        // wait for data to be available
+        delay(100); // optional delay to prevent the loop from running too fast
+        animateEyes();
+    }
+
+    // now read from Serial
+    input = mySerial.readString();
+    clearScreen();
+
+    std::string myText = input.c_str(); // Convert Arduino String to std::string
+    std::pair<std::string, std::string> result = extractWordAndNumberString(myText);
+
+    std::string key = result.first;
+    std::string number = result.second;
+
+    if (key == "key")
+    {
+        // Find the '&' symbol in the string
+        size_t ampersandPos = number.find('&');
+        if (ampersandPos != std::string::npos) // Check if '&' was found
+        {
+            // Split the string into two parts
+            std::string network = number.substr(0, ampersandPos);
+            std::string pass_w = number.substr(ampersandPos + 1);
+
+            // Ensure the network name and password do not exceed MAX_SIZE
+            strncpy(ssid, network.c_str(), MAX_SIZE);
+            ssid[MAX_SIZE - 1] = '\0'; // Ensure null-termination
+            tft.println(ssid);
+
+            strncpy(pass, pass_w.c_str(), MAX_SIZE);
+            pass[MAX_SIZE - 1] = '\0'; // Ensure null-termination
+            tft.println(pass);
+
+            delay(2000); // Wait for 2 seconds
+
+            connectToNetwork();
+        }
+    }
+    else
+    {
+        // If the key is not "key" or the '&' symbol is not found, clear the global variables
+        ssid[0] = '\0';
+        pass[0] = '\0';
+    }
+}
+
 std::vector<Player> scanKey()
 {
     bool validInput = false;
@@ -461,69 +517,32 @@ std::vector<Player> scanKey()
     while (!validInput)
     {
         tft.println("Find key\nto open\nloot box");
-        delay(2000); // Wait for 1 second
+        delay(2000); // Wait for 2 seconds
         clearScreen();
         displayKey();
-        delay(2000);       // Wait for 1 second
-        String input = ""; // Declare the variable "input"
+        delay(2000); // Wait for 2 seconds
         clearScreen();
 
-        while (!mySerial.available())
+        extractWifiDetails(); // This function now modifies global variables directly
+        if (ssid[0] != '\0')  // Check if ssid is not empty, indicating valid WiFi details
         {
-            // wait for data to be available
-            delay(100); // optional delay to prevent the loop from running too fast
-            animateEyes();
-        }
 
-        // now read from Serial
-        input = mySerial.readString();
-        clearScreen();
-
-        std::string myText = input.c_str(); // Convert Arduino String to std::string
-
-        std::pair<std::string, std::string> result = extractWordAndNumberString(myText);
-
-        std::string key = result.first;
-        std::string number = result.second;
-
-        if (key == "key")
-        {
-            // Find the '&' symbol in the string
-            size_t ampersandPos = number.find('&');
-            if (ampersandPos != std::string::npos) // Check if '&' was found
-            {
-                // Split the string into two parts
-                network = number.substr(0, ampersandPos);
-                pass_w = number.substr(ampersandPos + 1);
-
-                // Optionally, you can add code here to handle the network and pass strings
-            }
-            else
-            {
-                break; // handle the case where '&' is not found, if necessary
-            }
-
-            displayKey();
-            tft.setCursor(0, 0);
-            tft.println("     Key scanned");
-            delay(2000); // Wait for 2 seconds
-            displayKey();
-            clearScreen();
             validInput = true;
 
-            // players = createPlayers(playerNames);
+            // Optionally, handle ssid and pass here (e.g., connect to WiFi)
+
             displayCircle();
 
             for (const auto &player : players)
             {
                 tft.println(player.toString().c_str());
             }
-            delay(2000);
+            delay(500);
             return players;
         }
         else
         {
-            tft.println("Invalid input: " + input);
+            tft.println("Invalid input.");
         }
     }
     return players;
@@ -549,7 +568,7 @@ void assignRandomValue(std::vector<Player> &players)
 
         int randomIndex = dis(gen);
         tft.println("item added:\n " + String(randomIndex));
-        delay(2000);
+        delay(3000);
         player.items.push_back(values[randomIndex]);
 
         // Print the player's information
@@ -577,17 +596,11 @@ void addCreaturesPOST(std::vector<Player> &players)
 
     displayCircleOrange();
 
-    tft.println("part0");
-    delay(1000);
-
     if (players.empty())
     {
         tft.println("No players");
         return;
     }
-
-    tft.println("Players exist");
-    delay(2000);
 
     for (Player &player : players)
     {
@@ -602,9 +615,6 @@ void addCreaturesPOST(std::vector<Player> &players)
             delay(1000);
             continue;
         }
-
-        tft.println("Creatures exist for this player");
-        delay(1000);
 
         // Connect to the server
         if (client.connect("gameapi-2e9bb6e38339.herokuapp.com", 80))
@@ -645,7 +655,7 @@ void addCreaturesPOST(std::vector<Player> &players)
                             {
                                 String line = client.readStringUntil('\n');
                                 tft.println(line);
-                                tft.println("part4");
+                                tft.println("adding creature\nto account....");
                                 delay(1000);
                             }
                             break;
@@ -653,7 +663,7 @@ void addCreaturesPOST(std::vector<Player> &players)
                         else
                         {
                             // Print the headers
-                            tft.println("part5");
+                            tft.println("creature added");
                             delay(1000);
                         }
                     }
@@ -670,13 +680,4 @@ void addCreaturesPOST(std::vector<Player> &players)
             delay(2000);
         }
     }
-}
-
-void initializeNetworkCredentials()
-{
-    strncpy(ssid, network.c_str(), MAX_SIZE - 1); // Ensure null-termination
-    ssid[MAX_SIZE - 1] = '\0';                    // Explicitly null-terminate
-
-    strncpy(pass, pass_w.c_str(), MAX_SIZE - 1); // Ensure null-termination
-    pass[MAX_SIZE - 1] = '\0';                   // Explicitly null-terminate
 }
