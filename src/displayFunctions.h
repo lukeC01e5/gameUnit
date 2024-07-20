@@ -132,7 +132,7 @@ void drawVerticalLine()
   int displayWidth = tft.width();
   int displayHeight = tft.height();
 
-  int linePosition = (2 * displayWidth) / 3; // Calculate 2/3 of the display width
+  int linePosition = (1 * displayWidth) / 3; // Calculate 2/3 of the display width
 
   tft.drawLine(linePosition, 0, linePosition, displayHeight, TFT_WHITE); // Draw a white line
 }
@@ -143,7 +143,7 @@ void buttonReadText()
   tft.setTextSize(2);
   tft.setTextColor(TFT_WHITE);
   tft.setCursor(0, 0);
-  tft.println("\n               yes->\n\n\n\n\n               no->");
+  tft.println("\n<- no\n\n\n\n\n<- yes");
   tft.setTextSize(3);
 }
 
@@ -214,19 +214,6 @@ void displayKey()
   int16_t x = tft.width() / 2;  // Calculate the x coordinate of the center of the screen
   int16_t y = tft.height() / 2; // Calculate the y coordinate of the center of the screen
   tft.pushImage(x - 60, y - 40, 145, 128, key);
-  return;
-}
-
-void displayTrex()
-{
-  tft.fillScreen(TFT_BLACK); // Clear the screen
-
-  int16_t x = tft.width() / 2;                   // Calculate the x coordinate of the center of the screen
-  int16_t y = tft.height() / 2;                  // Calculate the y coordinate of the center of the screen
-  tft.pushImage(x - 30, y - 50, 128, 128, Trex); // Draw the T-Rex image at the center of the screen
-
-  delay(3000);               // Wait for 3 seconds
-  tft.fillScreen(TFT_BLACK); // Clear the screen
   return;
 }
 

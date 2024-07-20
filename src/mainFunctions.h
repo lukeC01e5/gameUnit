@@ -107,7 +107,7 @@ std::unordered_map<std::string, std::function<void()>> animalHandlers = {
 
 String whatAnimal(std::vector<Player> &players)
 {
-    tft.println(" champion");
+    tft.println(" collect");
     delay(1000); // Wait for 1 seconds
 
     String input = ""; // Declare the variable "input"
@@ -155,7 +155,7 @@ String whatAnimal(std::vector<Player> &players)
 
         clearScreen();
 
-        tft.println("\nKeep\ncreature");
+        tft.println("\n      Keep\n     creature");
         buttonReadText();
 
         if (buttonConfirm() == 1)
@@ -306,11 +306,11 @@ std::vector<std::string> addPlayer()
 std::string announcePlayerAdded(const std::string &playerName)
 {
     clearScreen();
-    tft.println((" " + playerName + "\n Added to\n team!").c_str());
+    tft.println(("\n  " + playerName + "\n  Added to\n  team!").c_str());
     delay(1500); // Wait for 1.5 seconds
     clearScreen();
     tft.setTextWrap(true);
-    tft.println("\nAdd\nanother\nplayer?");
+    tft.println("\n     Add\n     another\n     player?");
     buttonReadText();
 
     return playerName;
@@ -426,7 +426,9 @@ void trialFunctionPOST(std::vector<Player> &players)
                             while (client.available())
                             {
                                 String line = client.readStringUntil('\n');
+                                tft.setTextSize(3);
                                 tft.println(line);
+                                delay(2000);
                             }
                             break;
                         }
@@ -454,9 +456,9 @@ void extractWifiDetails()
 {
     displayKey();
     tft.setCursor(0, 0);
-    tft.setTextSize(2);
+    tft.setTextSize(3);
     clearScreen();
-    tft.println("     scanning....");
+    tft.println("   Return\n   home");
     delay(1000); // Wait for 2 seconds
 
     String input = "";
@@ -516,7 +518,9 @@ std::vector<Player> scanKey()
 
     while (!validInput)
     {
-        tft.println("Find key\nto open\nloot box");
+        tft.setTextSize(3);
+        // tft.drawCentreString("Find key\nto open\nloot box", tft.width() / 2, tft.height() / 2, 2);
+        tft.println("  Find key\n  to open\n  loot box");
         delay(2000); // Wait for 2 seconds
         clearScreen();
         displayKey();
@@ -663,8 +667,8 @@ void addCreaturesPOST(std::vector<Player> &players)
                         else
                         {
                             // Print the headers
-                            tft.println("creature added");
-                            delay(1000);
+                            tft.println("done!!! ");
+                            delay(2000);
                         }
                     }
                 }

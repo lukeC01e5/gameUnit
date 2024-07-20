@@ -45,7 +45,7 @@ void setup()
     mySerial.begin(9600, SERIAL_8N1, 27, 26); // Initialize serial communication on pins 27 (RX) and 26 (TX)
     tft.init();                               // Initialize the TFT display
     clearScreen();
-    tft.setRotation(1);
+    tft.setRotation(3);
     tft.setTextSize(3);
     tft.setTextColor(TFT_WHITE);
 
@@ -72,7 +72,7 @@ void loop()
     }
     clearScreen();
     tft.setTextSize(3);
-    tft.println("Earn loot ->\n\n\nCapture\ncreature  ->");
+    tft.println("<-  Capture\n    creature\n\n\n<-  Earn loot");
 
     int buttonValue = buttonConfirm();
     while (buttonValue != 0 && buttonValue != 1)
@@ -141,7 +141,7 @@ void loop()
     else if (buttonValue == 0)
     {
         clearScreen();
-        tft.println("Seek Creature\n to be your");
+        tft.println("Find Creature\n fossil to\n");
         if (!players.empty())
         {
             for (Player &player : players)
