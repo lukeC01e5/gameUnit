@@ -5,9 +5,10 @@
 #include <TFT_eSPI.h> // Include the TFT_eSPI library
 #include <AnimatedGIF.h>
 
-#include "Trex.h"     // Include the T-Rex image
-#include "treasure.h" // Include the treasure image
-#include "key.h"      // Include the treasure image
+#include "Trex.h"          // Include the T-Rex image
+#include "treasure.h"      // Include the treasure image
+#include "key.h"           // Include the treasure image
+//#include "dolllarDollar.h" // Include the treasure image
 // #include "treasureUnlokeyck.h" // Include the treasure2 image
 
 // void GIFDraw(GIFDRAW *pDraw);
@@ -49,7 +50,7 @@ void scan4challange()
   tft.setTextSize(3);
   tft.setTextColor(TFT_WHITE);
   tft.setCursor(0, 0);
-  tft.println("\n Scan\n bounty card\n to earn loot");
+  tft.println("\n Load\n Loot card");
 }
 
 void displayX()
@@ -207,7 +208,6 @@ void wrongAnswer()
 }
 
 void displayKey()
-
 {
   clearScreen();
   tft.setSwapBytes(true);
@@ -216,5 +216,17 @@ void displayKey()
   tft.pushImage(x - 60, y - 40, 145, 128, key);
   return;
 }
+
+/*
+void displayCoin()
+{
+  clearScreen();
+  tft.setSwapBytes(true);
+  int16_t x = (tft.width() / 2) - (145 / 2);                       // Calculate the x coordinate for horizontal centering
+  int16_t y = (tft.height() / 2) + (tft.height() / 4) - (128 / 2); // Calculate the y coordinate for bottom half positioning
+  tft.pushImage(x, y, 145, 128, dolllarDollar);
+  return;
+}
+*/
 
 #endif // DISPLAYFUNCTIONS_H

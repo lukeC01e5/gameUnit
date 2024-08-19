@@ -1,6 +1,18 @@
+
+#ifndef OBJECTS_H
+#define OBJECTS_H
+
+#include <Arduino.h>
 #include <vector>
 #include <string>
 #include <sstream>
+#include <TFT_eSPI.h>
+#include <coin.h>
+#include <Trex.h>
+#include <battle.h>
+#include <pgmspace.h>
+
+TFT_eSPI tft = TFT_eSPI();
 
 class Player
 {
@@ -31,3 +43,43 @@ public:
     return oss.str();
   }
 };
+
+// objects.h
+
+class MenuOption
+{
+public:
+  MenuOption(const char *name, const uint16_t *image, void (*action)())
+      : name(name), image(image), action(action) {}
+
+  void display(TFT_eSPI &tft, int x, int y, bool selected) const
+  {
+    tft.setCursor(x, y);
+    if (selected)
+    {
+      tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+    }
+    else
+    {
+      tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    }
+    tft.println(name);
+  }
+
+  void trigger() const
+  {
+    action();
+  }
+
+  const uint16_t *getImage() const
+  {
+    return image;
+  }
+
+private:
+  const char *name;
+  const uint16_t *image;
+  void (*action)();
+};
+
+#endif // OBJECTS_H

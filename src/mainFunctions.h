@@ -107,7 +107,7 @@ std::unordered_map<std::string, std::function<void()>> animalHandlers = {
 
 String whatAnimal(std::vector<Player> &players)
 {
-    tft.println(" collect");
+   // tft.println(" collect");
     delay(1000); // Wait for 1 seconds
 
     String input = ""; // Declare the variable "input"
