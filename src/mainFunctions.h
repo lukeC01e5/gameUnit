@@ -1,3 +1,4 @@
+
 #ifndef MAIN_FUNCTIONS_H
 #define MAIN_FUNCTIONS_H
 
@@ -15,27 +16,17 @@
 #include <cstring> // For strncpy
 #include "displayFunctions.h"
 #include "objects.h"
-#include "buttonCode.h"
 #include <chrono>
 #include <utility> // Include this for std::pair
 #include <string>  // Include this for std::string
 
-// #include "treasureUnlock.h"
-
 char quizAnswers[10];
-
 extern TFT_eSPI tft;
-
 bool hasPlayerBeenAdded = false; // Global variable
-
 std::vector<std::string> playerNames;
-
 String creatureCaptured = "noCreature";
-
-HardwareSerial mySerial(1); // Use the second hardware serial port
-
+extern HardwareSerial mySerial; // Use the second hardware serial port
 WiFiClient client;
-
 const int MAX_SIZE = 32;
 std::string network = "YourNetworkName"; // Example network name
 std::string pass_w = "YourPassword";     // Example password
@@ -46,11 +37,7 @@ char pass[MAX_SIZE];
 std::string announcePlayerAdded(const std::string &playerName);
 std::vector<Player> createPlayers(const std::vector<std::string> &playerNames);
 void updatePlayers(std::vector<Player> &players, const std::string &creatureCaptured);
-
 Player addAnotherPlayer();
-
-#endif
-
 void wrongAnswer();
 void assignRandomValue(std::vector<Player> &players);
 
@@ -105,92 +92,6 @@ std::unordered_map<std::string, std::function<void()>> animalHandlers = {
     {"ghost", []() { /* handle ghost */ }},
 };
 
-String whatAnimal(std::vector<Player> &players)
-{
-   // tft.println(" collect");
-    delay(1000); // Wait for 1 seconds
-
-    String input = ""; // Declare the variable "input"
-
-    while (!mySerial.available()) // 5 seconds timeout
-    {
-        // wait for data to be available
-        delay(100); // optional delay to prevent the loop from running too fast
-        animateEyes();
-    }
-
-    if (mySerial.available())
-    {
-        // now read from Serial
-        input = mySerial.readString();
-    }
-    else
-    {
-        tft.println("No serial data received");
-        return "";
-    }
-
-    String word = "";
-    // clearScreen();
-
-    std::string myText = input.c_str(); // Convert Arduino String to std::string
-
-    std::pair<std::string, std::string> result = extractWordAndNumberString(myText);
-
-    std::string animal = result.first;
-    std::string number = result.second;
-
-    if (animalHandlers.count(animal) > 0)
-    {
-        // Call the corresponding handler
-        animalHandlers[animal]();
-
-        // Update the player's mainCreature
-        // player.mainCreature = animal;
-
-        // Instruct the player to return to base
-        clearScreen();
-        tft.println("Creature has been captured");
-        delay(3000); // Wait for 1 second
-
-        clearScreen();
-
-        tft.println("\n      Keep\n     creature");
-        buttonReadText();
-
-        if (buttonConfirm() == 1)
-        {
-            clearScreen();
-            tft.println("Return to\nbase to\nkeep");
-            creatureCaptured = animal.c_str();
-            delay(1000); // Wait for 2 seconds
-
-            // Convert creatureCaptured to std::string
-            std::string creatureCapturedStd = creatureCaptured.c_str();
-
-            // Update all players
-            updatePlayers(players, creatureCapturedStd);
-
-            return String(creatureCaptured);
-        }
-
-        else if (buttonConfirm() == 0)
-        {
-            clearScreen();
-            tft.println("\nPick another\ncreature");
-            delay(1000); // Wait for 2 seconds
-            return "";
-        }
-    }
-    else
-    {
-        tft.println("Invalid input: " + input);
-        // scan4challange();
-    }
-
-    return "";
-}
-
 void updatePlayers(std::vector<Player> &players, const std::string &creatureCaptured)
 {
     // Add the captured creature to the creatures of all players
@@ -214,11 +115,11 @@ void connectToNetwork()
     {
         clearScreen();
         tft.println("Connecting to WiFi...");
-        delay(1000); // Wait for 1 second
+        delay(500); // Wait for 1 second
     }
     clearScreen();
     tft.println("Connected to WiFi!");
-    delay(1000); // Wait for 1 second
+    delay(500); // Wait for 1 second
 }
 
 Player createPlayerFromSerial(HardwareSerial &mySerial)
@@ -226,7 +127,7 @@ Player createPlayerFromSerial(HardwareSerial &mySerial)
     std::string playerName;
     int playerNumber = -1;
     unsigned long startTime = millis();
-    unsigned long timeout = 10000; // 5 seconds
+    unsigned long timeout = 100000; // 5 seconds
 
     while (millis() - startTime < timeout)
     {
@@ -248,12 +149,11 @@ Player createPlayerFromSerial(HardwareSerial &mySerial)
             }
         }
     }
-
     Player player(playerName, "noCreature", std::vector<std::string>(), std::vector<std::string>());
     return player;
 }
 
-std::vector<std::string> addPlayer()
+std::vector<std::string> addPlayer(int numPlayers)
 {
     if (hasPlayerBeenAdded)
         return playerNames; // If a player has already been added, return immediately
@@ -262,7 +162,7 @@ std::vector<std::string> addPlayer()
     tft.setTextColor(TFT_WHITE);
     tft.setTextSize(3);
     tft.setCursor(0, tft.getCursorY() + 10); // Move the cursor down
-    tft.println("\nFirst Player\n    Name?");
+    tft.println("\n First Player\n    name?");
     delay(1000); // Wait for 1 second
 
     Player player1 = createPlayerFromSerial(mySerial);
@@ -271,34 +171,21 @@ std::vector<std::string> addPlayer()
         std::string player1Name = announcePlayerAdded(player1.name);
         playerNames.push_back(player1Name); // Add player1's name to the vector
 
-        Serial.println(("Added player: " + player1Name).c_str()); // Print the player name
-        hasPlayerBeenAdded = true;                                // Set hasPlayerBeenAdded to true after first player is added
+        Serial.println((" Added player: " + player1Name).c_str()); // Print the player name
+        hasPlayerBeenAdded = true;                                 // Set hasPlayerBeenAdded to true after first player is added
     }
 
-    for (int i = 0; i < 3; i++) // Loop for the next 3 players
-    {
-        int confirmResult = buttonConfirm();
-        if (confirmResult == 1)
+    for (int i = 1; i < numPlayers; i++)
+    { // Loop for the next players
+        Player nextPlayer = addAnotherPlayer();
+        if (!nextPlayer.name.empty())
         {
-            Player nextPlayer = addAnotherPlayer();
-            if (!nextPlayer.name.empty())
-            {
-                std::string nextPlayerName = announcePlayerAdded(nextPlayer.name);
-                playerNames.push_back(nextPlayerName);
+            std::string nextPlayerName = announcePlayerAdded(nextPlayer.name);
+            playerNames.push_back(nextPlayerName);
 
-                Serial.println(("Added player: " + nextPlayerName).c_str());
-            }
-        }
-        else if (confirmResult == 0)
-        {
-            clearScreen();
-            tft.println("\n    Team\n  Complete!");
-            delay(2000); // Wait for 1 second
-            clearScreen();
-            return playerNames;
+            Serial.println((" Added player: " + nextPlayerName).c_str());
         }
     }
-
     clearScreen();
     return playerNames;
 }
@@ -306,20 +193,19 @@ std::vector<std::string> addPlayer()
 std::string announcePlayerAdded(const std::string &playerName)
 {
     clearScreen();
-    tft.println(("\n  " + playerName + "\n  Added to\n  team!").c_str());
+    tft.println(("\n  " + playerName + "\n  added to\n  team!").c_str());
     delay(1500); // Wait for 1.5 seconds
     clearScreen();
     tft.setTextWrap(true);
     tft.println("\n     Add\n     another\n     player?");
     buttonReadText();
-
     return playerName;
 }
 
 Player addAnotherPlayer()
 {
     clearScreen();
-    tft.println("Next Player\nName?");
+    tft.println("\n  Next player\n name?");
     delay(1000); // Wait for 1 second
     return createPlayerFromSerial(mySerial);
 }
@@ -456,9 +342,9 @@ void extractWifiDetails()
 {
     displayKey();
     tft.setCursor(0, 0);
-    tft.setTextSize(3);
+    tft.setTextSize(2);
     clearScreen();
-    tft.println("   Return\n   home");
+    tft.println("  Return to lab\n  to store\n  animal  DNA");
     delay(1000); // Wait for 2 seconds
 
     String input = "";
@@ -466,7 +352,7 @@ void extractWifiDetails()
     {
         // wait for data to be available
         delay(100); // optional delay to prevent the loop from running too fast
-        animateEyes();
+        // animateEyes();
     }
 
     // now read from Serial
@@ -520,7 +406,7 @@ std::vector<Player> scanKey()
     {
         tft.setTextSize(3);
         // tft.drawCentreString("Find key\nto open\nloot box", tft.width() / 2, tft.height() / 2, 2);
-        tft.println("  Find key\n  to open\n  loot box");
+        tft.println("  Return to \n  lab to\n  store items");
         delay(2000); // Wait for 2 seconds
         clearScreen();
         displayKey();
@@ -610,7 +496,7 @@ void addCreaturesPOST(std::vector<Player> &players)
     {
         clearScreen();
 
-        tft.println(("Processing player: " + player.name).c_str());
+        tft.println((" Processing player:\n " + player.name).c_str());
         delay(2000);
 
         if (player.creatures.empty())
@@ -623,12 +509,12 @@ void addCreaturesPOST(std::vector<Player> &players)
         // Connect to the server
         if (client.connect("gameapi-2e9bb6e38339.herokuapp.com", 80))
         {
-            tft.println("Connected to server");
+            tft.println(" Connected to server");
             delay(1000);
 
             for (const std::string &creature : player.creatures)
             {
-                tft.println(("Processing creature: " + creature).c_str());
+                tft.println((" Processing fossil:\n" + creature).c_str());
                 delay(1000);
 
                 // Send the POST request
@@ -659,7 +545,7 @@ void addCreaturesPOST(std::vector<Player> &players)
                             {
                                 String line = client.readStringUntil('\n');
                                 tft.println(line);
-                                tft.println("adding creature\nto account....");
+                                tft.println(" adding creature\n to account....");
                                 delay(1000);
                             }
                             break;
@@ -685,3 +571,5 @@ void addCreaturesPOST(std::vector<Player> &players)
         }
     }
 }
+
+#endif // MAIN_FUNCTIONS_H

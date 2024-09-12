@@ -5,15 +5,17 @@
 #include <TFT_eSPI.h> // Include the TFT_eSPI library
 #include <AnimatedGIF.h>
 
-#include "Trex.h"          // Include the T-Rex image
-#include "treasure.h"      // Include the treasure image
-#include "key.h"           // Include the treasure image
-//#include "dolllarDollar.h" // Include the treasure image
-// #include "treasureUnlokeyck.h" // Include the treasure2 image
+#include "Trex.h"     // Include the T-Rex image
+#include "treasure.h" // Include the treasure image
+#include "key.h"      // Include the treasure image
+// #include "dolllarDollar.h" // Include the treasure image
+//  #include "treasureUnlokeyck.h" // Include the treasure2 image
 
 // void GIFDraw(GIFDRAW *pDraw);
 
 extern TFT_eSPI tft;
+
+extern HardwareSerial mySerial;
 
 // #define GIF_IMAGE treasure2 //  No DMA  63 fps, DMA:  71fps
 
@@ -166,28 +168,6 @@ void drawLineAcrossDisplay()
   int linePosition = tft.height() / 4;                                 // Calculate the position of the line
   tft.drawLine(0, linePosition, tft.width(), linePosition, TFT_WHITE); // Draw the line
 }
-/*
-void unlock()
-{
-#define GIF_IMAGE treasureUnlock
-
-  tft.fillScreen(TFT_BLACK);
-  gif.begin(BIG_ENDIAN_PIXELS);
-
-  // gif.begin(BIG_ENDIAN_PIXELS);
-  //  Put your main code here, to run repeatedly:
-  if (gif.open((uint8_t *)GIF_IMAGE, sizeof(GIF_IMAGE), GIFDraw))
-  {
-    tft.startWrite(); // The TFT chip slect is locked low
-    while (gif.playFrame(true, NULL))
-    {
-      yield();
-    }
-    gif.close();
-    tft.endWrite(); // Release TFT chip select for other SPI devices
-  }
-}
-*/
 
 void wrongAnswer()
 {
@@ -217,16 +197,63 @@ void displayKey()
   return;
 }
 
-/*
-void displayCoin()
+#include "images/scanner.h" // Include the image data for scanner
+
+void scanAnimation(const uint16_t *toScan)
 {
-  clearScreen();
-  tft.setSwapBytes(true);
-  int16_t x = (tft.width() / 2) - (145 / 2);                       // Calculate the x coordinate for horizontal centering
-  int16_t y = (tft.height() / 2) + (tft.height() / 4) - (128 / 2); // Calculate the y coordinate for bottom half positioning
-  tft.pushImage(x, y, 145, 128, dolllarDollar);
-  return;
+  // Define the positions for the images
+  int16_t scannerX = tft.width() - 80; // Bottom right corner
+  int16_t scannerY = tft.height() - 80;
+  int16_t fossilX = 0; // Bottom left corner
+  int16_t fossilY = tft.height() - 80;
+
+  // Display the images
+  tft.pushImage(scannerX, scannerY, 80, 80, scanner);
+  tft.pushImage(fossilX, fossilY, 80, 80, toScan);
+
+  // Animation loop
+  while (true)
+  {
+    // Check for serial input to break the loop
+    if (mySerial.available() > 0)
+    {
+      break;
+    }
+
+    // Adjust the starting x position of the bracket
+    int16_t startX = scannerX - 35; // Adjust this value to change the starting x position
+
+    // Adjust the y position of the bracket
+    int16_t bracketY = scannerY + 20; // Adjust this value to change the y position (further from the bottom)
+
+    for (int16_t x = startX; x >= fossilX + 80; x -= 4)
+    {
+      // Clear the previous bracket position
+      tft.fillRect(x + 4, bracketY, 24, 32, TFT_BLACK);
+
+      // Draw the bracket at the new position
+      tft.setCursor(x, bracketY);
+      tft.setTextColor(TFT_WHITE, TFT_BLACK); // White text with black background
+      tft.setTextSize(4);
+      tft.print("(");
+
+      // Delay for animation effect
+      delay(50);
+
+      // Check for serial input to break the loop
+      if (Serial.available() > 0)
+      {
+        char input = Serial.read();
+        if (input == 'q') // Change 'q' to any character you want to use to break the loop
+        {
+          return;
+        }
+      }
+    }
+
+    // Clear the last bracket position
+    tft.fillRect(fossilX + 80, bracketY, 24, 32, TFT_BLACK);
+  }
 }
-*/
 
 #endif // DISPLAYFUNCTIONS_H

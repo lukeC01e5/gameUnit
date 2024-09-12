@@ -7,9 +7,6 @@
 #include <string>
 #include <sstream>
 #include <TFT_eSPI.h>
-#include <coin.h>
-#include <Trex.h>
-#include <battle.h>
 #include <pgmspace.h>
 
 TFT_eSPI tft = TFT_eSPI();
@@ -34,8 +31,7 @@ public:
     {
       oss << item << " ";
     }
-    // Add this block to print creatures
-    // oss << ", Creatures:";
+  
     for (const auto &creature : creatures)
     {
       oss << creature << " ";
@@ -43,8 +39,6 @@ public:
     return oss.str();
   }
 };
-
-// objects.h
 
 class MenuOption
 {
@@ -81,5 +75,7 @@ private:
   const uint16_t *image;
   void (*action)();
 };
+
+extern MenuOption options3[];
 
 #endif // OBJECTS_H
