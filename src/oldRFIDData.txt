@@ -1,0 +1,82 @@
+#ifndef RFIDDATA_H
+#define RFIDDATA_H
+
+#include <Arduino.h>
+#include <MFRC522.h> // Include MFRC522 library
+
+// Declare external MFRC522 instance
+extern MFRC522 mfrc522;
+
+// Declare external MIFARE_Key instance
+extern MFRC522::MIFARE_Key key;
+
+// Define creature types
+enum CreatureType
+{
+    NoCreature = 0,
+    Flamengo,
+    FlameKingo,
+    Kitten,
+    FlameOn,
+    Pup,
+    Dog,
+    Wolf,
+    Birdy,
+    HaastEagle,
+    Squidy,
+    GiantSquid,
+    Kraken,
+    BabyShark,
+    Shark,
+    Megalodon,
+    Tadpole,
+    PoisonDartFrog,
+    Unicorn,
+    MasterUnicorn,
+    Sprouty,
+    TreeFolk,
+    BushMonster,
+    BabyDragon,
+    Dragon,
+    DinoEgg,
+    TRex,
+    BabyRay,
+    MegaManta,
+    Orca,
+    BigBitey,
+    FlameLily,
+    MonsterLily,
+    BearCub,
+    MossBear
+    // Total of 34 creatures
+};
+
+// Environment flags
+enum EnvironmentFlags
+{
+    Wetland = 0x01,
+    Ocean = 0x02,
+    Forest = 0x04,
+    Volcano = 0x08
+};
+
+// Structure to hold player data
+struct PlayerData
+{
+    char trainerName[16];     // 16 bytes
+    uint8_t trainerAge;       // 1 byte
+    char creatureName[16];    // 16 bytes
+    uint8_t creatureType;     // 1 byte
+    uint16_t coin;            // 2 bytes
+    uint8_t environmentFlags; // 1 byte
+    uint8_t reserved[12];     // Padding to make total size 48 bytes
+    // Total: 48 bytes (3 blocks of 16 bytes)
+};
+
+// Function declarations
+bool writePlayerDataToRFID(const PlayerData &playerData);
+bool readPlayerDataFromRFID(PlayerData &playerData);
+void serializePlayerData(const PlayerData &playerData, uint8_t *buffer);
+void deserializePlayerData(const uint8_t *buffer, PlayerData &playerData);
+
+#endif // RFIDDATA_H

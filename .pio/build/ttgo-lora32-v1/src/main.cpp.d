@@ -297,7 +297,7 @@
  .pio/libdeps/ttgo-lora32-v1/ESPAsyncWebServer-esphome/src/AsyncWebSocket.h \
  .pio/libdeps/ttgo-lora32-v1/ESPAsyncWebServer-esphome/src/AsyncWebSynchronization.h \
  .pio/libdeps/ttgo-lora32-v1/ESPAsyncWebServer-esphome/src/AsyncEventSource.h \
- .pio/libdeps/ttgo-lora32-v1/MFRC522/src/MFRC522.h \
+ src/RFID.h .pio/libdeps/ttgo-lora32-v1/MFRC522/src/MFRC522.h \
  .pio/libdeps/ttgo-lora32-v1/MFRC522/src/require_cpp11.h \
  .pio/libdeps/ttgo-lora32-v1/MFRC522/src/deprecated.h src/RFIDData.h \
- src/arduino_secrets.h
+ src/object.h src/arduino_secrets.h
