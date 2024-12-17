@@ -8,6 +8,7 @@ void parseRFIDData(const String &data, RFIDData &rfidData)
     if (data.length() < 7 || data.charAt(0) != '&')
     {
         // Invalid data format
+        Serial.println("Invalid RFID data format");
         return;
     }
 
@@ -24,4 +25,14 @@ void parseRFIDData(const String &data, RFIDData &rfidData)
     {
         rfidData.creatureName = "";
     }
+
+    Serial.println("Parsed RFID Data:");
+    Serial.print("Age: ");
+    Serial.println(rfidData.age);
+    Serial.print("Coins: ");
+    Serial.println(rfidData.coins);
+    Serial.print("Creature Type: ");
+    Serial.println(rfidData.creatureType);
+    Serial.print("Creature Name: ");
+    Serial.println(rfidData.creatureName);
 }
