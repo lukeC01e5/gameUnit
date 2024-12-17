@@ -1,43 +1,27 @@
-// RFIDData.cpp
 #include "RFIDData.h"
 
 void parseRFIDData(const String &data, RFIDData &rfidData)
 {
-    int startIndex, endIndex;
+    // Data format: &AACCCTT%NNNN...
+    // AA: Age, CC: Coins, TT: Creature Type, %: Separator, NNNN...: Creature Name
 
-    // Extract name
-    startIndex = data.indexOf("&||name.") + 8;
-    endIndex = data.indexOf("||&", startIndex);
-    if (startIndex > 7 && endIndex > startIndex)
+    if (data.length() < 7 || data.charAt(0) != '&')
     {
-        rfidData.name = data.substring(startIndex, endIndex);
+        // Invalid data format
+        return;
+    }
+
+    rfidData.age = data.substring(1, 3).toInt();
+    rfidData.coins = data.substring(3, 5).toInt();
+    rfidData.creatureType = data.substring(5, 7).toInt();
+
+    int nameStartIndex = data.indexOf('%') + 1;
+    if (nameStartIndex > 0 && nameStartIndex < data.length())
+    {
+        rfidData.creatureName = data.substring(nameStartIndex);
     }
     else
     {
-        rfidData.name = "";
-    }
-
-    // Extract age
-    startIndex = data.indexOf("&||age.") + 7;
-    endIndex = data.indexOf("||&", startIndex);
-    if (startIndex > 6 && endIndex > startIndex)
-    {
-        rfidData.age = data.substring(startIndex, endIndex).toInt();
-    }
-    else
-    {
-        rfidData.age = 0;
-    }
-
-    // Extract character type
-    startIndex = data.indexOf("&||characterType.") + 17;
-    endIndex = data.indexOf("||&", startIndex);
-    if (startIndex > 16 && endIndex > startIndex)
-    {
-        rfidData.characterType = data.substring(startIndex, endIndex);
-    }
-    else
-    {
-        rfidData.characterType = "";
+        rfidData.creatureName = "";
     }
 }

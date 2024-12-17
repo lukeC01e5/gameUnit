@@ -1,0 +1,32 @@
+/* style.css */
+
+/* Style for the body */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+/* Heading style */
+h1 {
+    color: #333;
+}
+
+/* Label styling */
+label {
+    display: inline-block;
+    width: 150px;
+    margin-bottom: 10px;
+}
+
+/* Input and select styling */
+input, select {
+    padding: 5px;
+    width: 200px;
+    margin-bottom: 10px;
+}
+
+/* Submit button styling */
+input[type="submit"] {
+    width: auto;
+    padding: 10px 20px;
+}
