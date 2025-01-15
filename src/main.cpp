@@ -497,3 +497,43 @@ bool writeToRFID(const String &data, byte blockAddr)
 
     return true;
 }
+
+#include <Arduino.h>
+#include <HTTPClient.h>
+#include "RFIDData.h" // for Creature definition
+
+// Example function to POST Creature data as JSON
+bool postCreatureToDB(const Creature &c, const String &endpoint) {
+    // Convert creature to JSON
+    String jsonPayload = "{";
+    jsonPayload += "\"age\":"          + String(c.trainerAge)    + ",";
+    jsonPayload += "\"coins\":"        + String(c.coins)         + ",";
+    jsonPayload += "\"creatureType\":" + String(c.creatureType)  + ",";
+    jsonPayload += "\"customName\":\"" + c.customName            + "\",";
+    jsonPayload += "\"trainerName\":\"" + c.trainerName          + "\"";
+    // add more fields if needed
+    jsonPayload += "}";
+
+    // Prepare HTTP POST request
+    HTTPClient http;
+    http.begin("http://gameapi-2e9bb6e38339.herokuapp.com/api/v1/login"); // e.g. http://gameapi-2e9bb6e38339.herokuapp.com/api/v1/login"
+    http.addHeader("Content-Type", "application/json");
+    // If you need authorization, add the header:
+    // http.addHeader("Authorization", "Basic " + base64AuthString);
+
+    int httpResponseCode = http.POST(jsonPayload);
+
+    if (httpResponseCode == 200) {
+        Serial.println("POST succeeded! Server response:");
+        Serial.println(http.getString());
+        http.end();
+        return true;
+    } else {
+        Serial.print("POST failed, code: ");
+        Serial.println(httpResponseCode);
+        Serial.print("Error: ");
+        Serial.println(http.errorToString(httpResponseCode));
+        http.end();
+        return false;
+    }
+}
