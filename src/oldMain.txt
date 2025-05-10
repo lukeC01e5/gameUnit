@@ -1,11 +1,13 @@
 #include <Keypad.h>
-#include <TFT_eSPI.h> // TFT display library
+#include <TFT_eSPI.h>
 #include <Arduino.h>
 #include <SPI.h>
-#include <FS.h>
-#include <MFRC522.h>
-#include "RFIDData.h"
-#include "GlobalDefs.h" // Ensure this defines SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN, and a global 'key' of type MFRC522::MIFARE_Key
+#include "RFIDData.h"   // Contains readFromRFID() and writeToRFID()
+#include "GlobalDefs.h" // SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN, RST_PIN, key, mfrc522, etc.
+
+/////////////////
+//// tavern ///
+///////////////
 
 // Keypad configuration (4x3 keypad)
 const byte ROWS = 4;
@@ -18,10 +20,10 @@ char keys[ROWS][COLS] = {
 byte rowPins[ROWS] = {21, 17, 2, 15};
 byte colPins[COLS] = {12, 27, 32};
 
-Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+Keypad keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 TFT_eSPI tft; // TFT display instance
 
-// Function to get challenge code from keypad
+// Ask the user for a 3-digit challenge code via the keypad
 String getChallengeCodeFromKeypad()
 {
     String code = "";
@@ -30,172 +32,295 @@ String getChallengeCodeFromKeypad()
     tft.println("Enter 3-digit code:");
     while (code.length() < 3)
     {
-        char key = keypad.getKey();
-        if (key && isDigit(key))
+        char k = keypad.getKey();
+        if (k && isDigit(k))
         {
-            code += key;
-            tft.print(key);
+            code += k;
+            tft.print(k);
         }
     }
     return code;
 }
 
+// Minimal direct read of block 1 (no direct authentication here)
+String readBlock1()
+{
+    const byte blockAddr = 1;
+
+    // Read 16 bytes from block 1
+    byte buffer[18];
+    byte size = sizeof(buffer);
+
+    MFRC522::StatusCode status = mfrc522.MIFARE_Read(blockAddr, buffer, &size);
+    if (status != MFRC522::STATUS_OK)
+    {
+        Serial.print("Read failed: ");
+        Serial.println(mfrc522.GetStatusCodeName(status));
+        return "";
+    }
+
+    String result;
+    for (int i = 0; i < 16; i++)
+    {
+        if (buffer[i] == 0)
+            break; // Stop at ASCII null
+        result += (char)buffer[i];
+    }
+    return result;
+}
+
+// Minimal direct write to block 1 (re-authenticates for writing)
+bool writeBlock1(const String &newData)
+{
+    const byte blockAddr = 1;
+    byte trailerBlock = 3;
+    MFRC522::StatusCode status;
+
+    // Authenticate for writing
+    status = mfrc522.PCD_Authenticate(
+        MFRC522::PICC_CMD_MF_AUTH_KEY_A,
+        trailerBlock,
+        &key,
+        &(mfrc522.uid));
+    if (status != MFRC522::STATUS_OK)
+    {
+        Serial.print("Re-auth failed: ");
+        Serial.println(mfrc522.GetStatusCodeName(status));
+        Serial.println("DEBUG: Check if the tag's sector key has been changed from 0xFF...FF.");
+        return false;
+    }
+
+    // Prepare buffer (truncate if newData is longer than 16)
+    byte buffer[16];
+    memset(buffer, 0, 16);
+    for (int i = 0; i < 16 && i < (int)newData.length(); i++)
+    {
+        buffer[i] = newData[i];
+    }
+
+    // Write buffer to block 1
+    status = mfrc522.MIFARE_Write(blockAddr, buffer, 16);
+    if (status != MFRC522::STATUS_OK)
+    {
+        Serial.print("Write failed: ");
+        Serial.println(mfrc522.GetStatusCodeName(status));
+        return false;
+    }
+
+    // Stop encryption session after writing
+    mfrc522.PCD_StopCrypto1();
+    return true;
+}
+
+/**
+ * Debug function reading blocks 0..3 of sector 0 in HEX
+ * to see if they are still 0xFF...FF.
+ */
+void debugReadSector0()
+{
+    Serial.println("DEBUG: Reading all blocks in sector 0 (blocks 0..3)");
+
+    for (byte blockAddr = 0; blockAddr < 4; blockAddr++)
+    {
+        byte buffer[18];
+        byte size = sizeof(buffer);
+
+        // For sector 0, trailer block is 3
+        byte trailerBlock = 3;
+        MFRC522::StatusCode status = mfrc522.PCD_Authenticate(
+            MFRC522::PICC_CMD_MF_AUTH_KEY_A,
+            trailerBlock,
+            &key,
+            &(mfrc522.uid));
+        if (status != MFRC522::STATUS_OK)
+        {
+            Serial.print("DEBUG: Auth failed for block ");
+            Serial.print(blockAddr);
+            Serial.print(" : ");
+            Serial.println(mfrc522.GetStatusCodeName(status));
+            Serial.println("DEBUG: Could not read sector 0 with default 0xFF...FF key.");
+            mfrc522.PCD_StopCrypto1();
+            continue;
+        }
+
+        status = mfrc522.MIFARE_Read(blockAddr, buffer, &size);
+        if (status != MFRC522::STATUS_OK)
+        {
+            Serial.print("DEBUG: Read failed for block ");
+            Serial.print(blockAddr);
+            Serial.print(" : ");
+            Serial.println(mfrc522.GetStatusCodeName(status));
+            mfrc522.PCD_StopCrypto1();
+            continue;
+        }
+
+        Serial.print("DEBUG: Block ");
+        Serial.print(blockAddr);
+        Serial.print(" [HEX]: ");
+        for (int i = 0; i < 16; i++)
+        {
+            if (buffer[i] < 0x10)
+                Serial.print("0");
+            Serial.print(buffer[i], HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
+
+        if (blockAddr == 3)
+        {
+            bool keyAisDefault = true;
+            bool keyBisDefault = true;
+            for (int i = 0; i < 6; i++)
+            {
+                if (buffer[i] != 0xFF)
+                {
+                    keyAisDefault = false;
+                    break;
+                }
+            }
+            for (int i = 10; i < 16; i++)
+            {
+                if (buffer[i] != 0xFF)
+                {
+                    keyBisDefault = false;
+                    break;
+                }
+            }
+            Serial.print("DEBUG: Key A is ");
+            Serial.println(keyAisDefault ? "still 0xFF...FF" : "NOT default");
+            Serial.print("DEBUG: Key B is ");
+            Serial.println(keyBisDefault ? "still 0xFF...FF" : "NOT default");
+        }
+        mfrc522.PCD_StopCrypto1();
+    }
+    Serial.println("DEBUG: Finished reading sector 0.\n");
+}
+
 void setup()
 {
     Serial.begin(115200);
+    Serial.println("=== Starting Setup ===");
+
+    // Initialize TFT
     tft.init();
     tft.setRotation(3);
     tft.setTextSize(2);
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.fillScreen(TFT_BLACK);
     tft.setCursor(0, 0);
-    tft.println("TFT Initialized\n");
+    tft.println("TFT Initialized");
+    Serial.println("DEBUG: TFT initialized");
 
-    Serial.println("About to call SPI.begin()");
-    // Use explicit pins for SPI and include SS_PIN (this was the key difference)
+    Serial.println("Initializing SPI...");
     SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);
+    Serial.println("DEBUG: SPI started");
 
-    Serial.println("About to call mfrc522.PCD_Init()");
+    Serial.println("Initializing RFID...");
     mfrc522.PCD_Init();
-    Serial.println("Done initializing RFID");
+    Serial.println("DEBUG: RFID initialized");
 
-    // Initialize global default key if not already done (set all 6 bytes to 0xFF)
-    for (byte i = 0; i < 6; i++)
+    // Set default global key (0xFF...FF)
+    for (int i = 0; i < 6; i++)
     {
         key.keyByte[i] = 0xFF;
     }
+    Serial.println("DEBUG: Default key set to 0xFF");
 
-    // Welcome and wait for a key press before proceeding
+    // Wait for keypad press
     tft.fillScreen(TFT_BLACK);
     tft.setCursor(0, 0);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
-    tft.println("press any key\n to start");
+    tft.println("Press any key");
+    tft.println("to start...");
+    Serial.println("DEBUG: Waiting for keypad press");
     while (keypad.getKey() == NO_KEY)
     {
         delay(100);
     }
     tft.fillScreen(TFT_BLACK);
+    Serial.println("=== Setup Complete ===\n");
 }
 
 void loop()
 {
-    // 1) Get the 3-digit challenge code from the user
-    String newChallengeCode = getChallengeCodeFromKeypad(); // e.g., "111"
-    tft.println("\nGot: " + newChallengeCode);
+    Serial.println("\n=== New Loop Iteration ===");
 
-    // 2) Prompt for RFID tag and wait until one is present
+    // 1) Get 3-digit code
+    String newChallengeCode = getChallengeCodeFromKeypad();
+    tft.println("\nGot: " + newChallengeCode);
+    Serial.print("DEBUG: Challenge code entered: ");
+    Serial.println(newChallengeCode);
+
+    // 2) Present RFID tag
     tft.println("\nPresent RFID Tag...");
+    Serial.println("DEBUG: Waiting for RFID tag...");
     while (!mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial())
     {
         delay(100);
     }
     tft.println("Tag present!");
+    Serial.println("DEBUG: Tag detected");
     delay(200);
 
-    // Before waking up the card, declare a buffer for ATQA
-    byte bufferATQA[2];
-    byte bufferSize = sizeof(bufferATQA);
-
-    // Wake up card (you only need one wakeup call)
-    mfrc522.PICC_WakeupA(bufferATQA, &bufferSize);
-    delay(200);
-
-    tft.println("Testing basic card functions...");
-
-    // Check that the card responds and print its UID
-    if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
+    // Authenticate once before readBlock1()
     {
-        tft.println("Card UID: ");
-        String uidString = "";
-        for (byte i = 0; i < mfrc522.uid.size; i++)
+        byte trailerBlock = 3;
+        MFRC522::StatusCode authStatus = mfrc522.PCD_Authenticate(
+            MFRC522::PICC_CMD_MF_AUTH_KEY_A,
+            trailerBlock,
+            &key,
+            &(mfrc522.uid));
+        if (authStatus != MFRC522::STATUS_OK)
         {
-            uidString += String(mfrc522.uid.uidByte[i] < 0x10 ? "0" : "");
-            uidString += String(mfrc522.uid.uidByte[i], HEX);
-        }
-        tft.println(uidString);
-
-        // Attempt authentication using the default key
-        MFRC522::MIFARE_Key testKey;
-        for (byte i = 0; i < 6; i++)
-        {
-            testKey.keyByte[i] = 0xFF;
-        }
-        byte testBlock = 1;
-        byte trailerBlock = (testBlock / 4) * 4 + 3;
-        MFRC522::StatusCode status = mfrc522.PCD_Authenticate(
-            MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &testKey, &(mfrc522.uid));
-        if (status == MFRC522::STATUS_OK)
-        {
-            tft.println("Auth OK!");
-        }
-        else
-        {
-            tft.println("Auth failed: ");
-            tft.println(mfrc522.GetStatusCodeName(status));
+            Serial.print("Auth for readBlock1 failed: ");
+            Serial.println(mfrc522.GetStatusCodeName(authStatus));
+            Serial.println("Skipping read...");
         }
     }
 
-    // Re-use the earlier buffer and wakeup procedure before reading
-    bufferSize = sizeof(bufferATQA);
-    mfrc522.PICC_WakeupA(bufferATQA, &bufferSize);
-    delay(200);
+    // 3) Read block 1 (no direct auth inside readBlock1())
+    String block1Data = readBlock1();
+    tft.println("Block 1 Data:");
+    tft.println(block1Data);
+    Serial.println("DEBUG: Block 1 contents: " + block1Data);
 
-    // 3) Read existing data from block 1 using your RFIDData read function
-    int myIntPart = 0;
-    String myStrPart;
-    String rawData = readFromRFID(mfrc522, key, 1, myIntPart, myStrPart);
-
-    // Debug output on TFT and Serial
-    tft.fillScreen(TFT_BLACK);
-    tft.setCursor(0, 0);
-    tft.println("Raw data read:");
-    tft.println(rawData);
-    tft.println("Length: " + String(rawData.length()));
-    tft.println("Has %: " + String(rawData.indexOf('%') != -1 ? "YES" : "NO"));
-    Serial.println("DEBUG - Raw data: " + rawData);
-    Serial.println("DEBUG - Length: " + String(rawData.length()));
-    Serial.println("DEBUG - Has %: " + String(rawData.indexOf('%') != -1 ? "YES" : "NO"));
-
-    delay(3000); // Allow time to review debug output
-
-    if (rawData.indexOf('%') != -1 && rawData.length() >= 7)
+    // 4) Check “%” and update data if needed
+    if (block1Data.indexOf('%') != -1 && block1Data.length() >= 4)
     {
-        // Parse the existing data
-        String wrong = rawData.substring(3, 4); // e.g., existing wrong guess digit
-        String bools = rawData.substring(5, 7); // e.g., existing bool value
-        int pctPos = rawData.indexOf('%');
-        String namePart = rawData.substring(pctPos + 1);
+        String updated = newChallengeCode + block1Data.substring(3);
+        Serial.println("DEBUG: Updated data: " + updated);
 
-        // Build the updated RFID string (replace first 3 challenge digits)
-        String updatedString = newChallengeCode + wrong + "?" + bools + "%" + namePart;
-        delay(200);
-
-        // Write the updated string to the card using the RFIDData write function
-        MFRC522::MIFARE_Key mainKey;
-        for (byte i = 0; i < 6; i++)
+        bool result = writeBlock1(updated);
+        if (result)
         {
-            mainKey.keyByte[i] = 0xFF;
-        }
-        bool writeOk = writeToRFID(mfrc522, mainKey, updatedString, 1);
-        if (writeOk)
-        {
-            Serial.println("RFID update succeeded!");
-            tft.println("Update Succeeded!");
+            tft.println("Block 1 Update Succeeded!");
+            Serial.println("DEBUG: Block 1 update succeeded!");
         }
         else
         {
-            Serial.println("RFID update failed!");
-            tft.println("Update Failed!");
+            tft.println("Block 1 Update Failed!");
+            Serial.println("DEBUG: Block 1 update failed!");
         }
     }
     else
     {
-        tft.println("Invalid existing data format.");
+        tft.println("Invalid data format.\nNo update performed.");
+        Serial.println("DEBUG: Invalid data format or auth error, skipping update.");
     }
 
-    // Halt card and stop crypto session
-    mfrc522.PICC_HaltA();
-    mfrc522.PCD_StopCrypto1();
+    // (Re-)Select the card before reading sector 0 again
+    delay(100);
+    if (!mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial())
+    {
+        Serial.println("DEBUG: Could not re-select card for sector read. Skipping debug...");
+    }
+    else
+    {
+        debugReadSector0();
+    }
 
-    delay(2000); // Pause before restarting loop
+    // Halt the card
+    mfrc522.PICC_HaltA();
+    Serial.println("DEBUG: Card halted");
+    delay(2000);
 }

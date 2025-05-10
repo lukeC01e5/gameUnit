@@ -26,19 +26,17 @@ struct RFIDParsed
     String name;
 };
 
-struct Creature
+struct Character
 {
     //int yearLevel;       // 1 digit (1-9)
     int challengeCode;   // 3 digits (000-999)
     int wrongGuesses;    // 1 digit (0-9)
     int boolVal;         // unchanged
-    //int creatureType;    // Now 0-99
-    //int artifactValue;   // New field, 0-99
-    /////////////String creatureName; // Increased to 10 chars max
-    // int creatureType;    // 2 digit (0-9)
     String customName;
     int coins; // New field
 };
+
+
 // extern RFIDData pendingData; // Remove or comment out this line
 extern bool dataPending;
 
@@ -52,7 +50,7 @@ void parseRFIDData(const String &data, RFIDData &rfidData);
 RFIDParsed parseRawRFID(const String &raw);
 
 // Add decode(...) prototype here:
-Creature decode(int numericPart, const String &namePart);
-bool clearChallBools(MFRC522 &mfrc522, MFRC522::MIFARE_Key &key, const Creature &creature);
+Character decode(int numericPart, const String &namePart);
+bool clearChallBools(MFRC522 &mfrc522, MFRC522::MIFARE_Key &key, const Character &Character);
 
 #endif // RFIDDATA_H

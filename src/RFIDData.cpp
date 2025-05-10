@@ -306,9 +306,9 @@ bool writeToRFID(MFRC522 &mfrc522, MFRC522::MIFARE_Key &key, const String &data,
     return true;
 }
 
-Creature decode(int numericPart, const String &namePart)
+Character decode(int numericPart, const String &namePart)
 {
-    Creature c;
+    Character c;
 
     // Convert numericPart to a 6-digit string
     char buffer[7];
@@ -328,7 +328,7 @@ Creature decode(int numericPart, const String &namePart)
     c.customName = namePart;
 
     // Debug output
-    Serial.println("[decode] Created Creature from numericPart & namePart:");
+    Serial.println("[decode] Created Character from numericPart & namePart:");
     Serial.print("  Challenge Code: ");
     Serial.println(c.challengeCode);
     Serial.print("  Wrong Guesses: ");
@@ -341,22 +341,22 @@ Creature decode(int numericPart, const String &namePart)
     return c;
 }
 
-bool clearChallBools(MFRC522 &mfrc522, MFRC522::MIFARE_Key &key, const Creature &creature)
+bool clearChallBools(MFRC522 &mfrc522, MFRC522::MIFARE_Key &key, const Character &character)
 {
-    Serial.println(creature.customName);
+    Serial.println(character.customName);
 
     // 1) Set intVal to 0
-    Creature updatedCreature = creature;
-    updatedCreature.boolVal = 0;
+    Character updatedCharacter = character;
+    updatedCharacter.boolVal = 0;
 
     // 2) Build payload: "Y CCC W BB%NAME" (each field is 2 digits)
     char buffer[12];
     snprintf(buffer, sizeof(buffer), "%01d%03d%01d%02d%%%s",
-             // updatedCreature.yearLevel,
-             updatedCreature.challengeCode,
-             updatedCreature.wrongGuesses,
-             updatedCreature.boolVal,
-             updatedCreature.customName.substring(0, 6).c_str());
+             // updatedCharacter.yearLevel,
+             updatedCharacter.challengeCode,
+             updatedCharacter.wrongGuesses,
+             updatedCharacter.boolVal,
+             updatedCharacter.customName.substring(0, 6).c_str());
     String payload = String(buffer);
 
     Serial.print("[clearChallBools] Final payload ready...... ");
